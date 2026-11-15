@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Green Encyclopedia</title>
+<style>
+:root{--ink:#1d2a22;--paper:#f8f6ec;--paper2:#efecdd;--desk:#10231a;--desk2:#18332a;--accent:#2e8b57;--line:#d9d5c2;--muted:#6b7568}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at top,var(--desk2),var(--desk));color:var(--ink);font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;display:flex;flex-direction:column;overflow:hidden}
+button,input{font:inherit}
+button{cursor:pointer}
+header{display:flex;align-items:center;gap:10px;padding:10px 16px;color:#e6f2e6;flex:none}
+header h1{font-size:18px;margin:0;font-weight:normal;letter-spacing:.06em;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{background:rgba(255,255,255,.08);color:#e6f2e6;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 12px;font-size:14px}
+.hbtn:hover{background:rgba(255,255,255,.18)}
+.wrap{flex:1;display:flex;min-height:0}
+/* sidebar */
+#toc{width:310px;flex:none;background:var(--paper);border-right:1px solid #000;display:flex;flex-direction:column;min-height:0;transition:margin-left .25s}
+#toc.closed{margin-left:-310px}
+#toc .tochead{padding:12px 14px 8px;border-bottom:1px solid var(--line)}
+#tocclose{display:none}
+#toc h2{margin:0 0 8px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-weight:normal}
+#search{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:5px;background:#fff}
+#toclist{overflow:auto;flex:1;padding:6px 0 20px;font-size:14px}
+.trow{display:flex;align-items:center}
+.trow .caret{background:none;border:0;width:28px;height:30px;color:var(--muted);font-size:11px;flex:none}
+.trow .tname{flex:1;background:none;border:0;text-align:left;padding:6px 4px;color:var(--ink);font-weight:bold}
+.trow .tname:hover,.titem:hover{background:var(--paper2)}
+.trow .cnt{color:var(--muted);font-size:12px;padding-right:12px}
+.trow.cur .tname{color:var(--accent)}
+.tsub{display:none}
+.tsub.open{display:block}
+.titem{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;text-align:left;padding:4px 10px 4px 30px;color:var(--ink);font-size:13.5px}
+.titem.cur{background:#dfeeda}
+.dot{width:14px;height:14px;border-radius:3px;flex:none;border:1px solid rgba(0,0,0,.2)}
+.titem .hx{margin-left:auto;color:var(--muted);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px}
+.titem[draggable]{cursor:grab;position:relative}
+.titem[draggable]::before{content:"⋮⋮";position:absolute;left:11px;color:var(--muted);font-size:11px;letter-spacing:-2px}
+.mosaic button[draggable]{cursor:grab}
+.dragging{opacity:.4}
+.titem.dropb{box-shadow:inset 0 3px 0 var(--accent)}.titem.dropa{box-shadow:inset 0 -3px 0 var(--accent)}
+.mosaic .dropb{box-shadow:-4px 0 0 var(--ink)}.mosaic .dropa{box-shadow:4px 0 0 var(--ink)}
+.btn.small{font-size:13px;padding:6px 10px}
+.titem.sel{background:#cfe6c8;box-shadow:inset 4px 0 0 var(--accent)}
+.mosaic button.sel{outline:3px solid var(--ink);outline-offset:1px}
+#selbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:13px}#selbar[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);background:#14251b;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.5);z-index:20;font-size:14px;display:flex;gap:12px;align-items:center}#toast[hidden]{display:none}
+#bk{position:fixed;top:0;left:0;right:0;bottom:0;z-index:30;background:rgba(8,20,14,.6);display:flex;align-items:center;justify-content:center;padding:14px}#bk[hidden]{display:none}
+#bktext{width:100%;height:32vh;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:16px;border:1px solid var(--line);border-radius:6px;padding:8px;background:#fff}
+#dlg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:40;background:rgba(8,20,14,.6);display:flex;align-items:center;justify-content:center;padding:18px}#dlg[hidden]{display:none}
+.dlgbox{background:var(--paper);border-radius:10px;padding:22px 22px 18px;max-width:440px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#dlgmsg{white-space:pre-wrap;line-height:1.5;font-size:16px;overflow-wrap:anywhere}
+#selbar span{flex:1 0 100%}#selmove{flex:1;min-width:0}#selbar .btn{font-size:12px;padding:5px 8px}
+.subrow{padding-left:14px;cursor:grab}.subrow .tname{font-weight:normal;font-style:italic}
+.titem.deep{padding-left:48px}.titem.deep[draggable]::before{left:30px}
+.tsub.dropa{box-shadow:inset 0 -3px 0 var(--accent);min-height:3px}
+.trow.dropb{box-shadow:inset 0 3px 0 var(--accent)}.trow.dropa{box-shadow:inset 0 -3px 0 var(--accent)}
+.dropin{background:#dfeeda!important;outline:2px dashed var(--accent);outline-offset:-2px}
+.glabel{margin:16px 0 6px;padding:4px 6px;border-radius:4px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.glabel b{color:var(--ink);font-weight:normal;font-style:italic;font-size:15px}
+select.field{width:auto;margin:0;padding:6px 8px;font-size:13px}
+.cover .cr{margin-top:22px;font-size:14px;line-height:1.7;opacity:.9}.cover .cr small{font-size:12px;opacity:.85}
+.tdiv{margin:8px 14px;border-top:1px solid var(--line)}
+.tnote{padding:8px 30px;color:var(--muted);font-size:13px;font-style:italic}
+/* book */
+main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;padding:6px 18px;min-height:0;perspective:2200px}
+.book{width:min(1100px,100%);height:min(680px,100%);display:flex;background:var(--paper);border-radius:6px;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 6px #0a1711;position:relative}
+.leaf{flex:1;min-width:0;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.leaf.l{border-radius:6px 0 0 6px;box-shadow:inset -18px 0 24px -18px rgba(0,0,0,.35)}
+.leaf.r{border-radius:0 6px 6px 0;box-shadow:inset 18px 0 24px -18px rgba(0,0,0,.25);padding:34px 38px;overflow:auto}
+.flip-f .leaf.r{animation:ff .38s ease-out;transform-origin:left center}
+.flip-b .leaf.l{animation:fb .38s ease-out;transform-origin:right center}
+@keyframes ff{from{transform:rotateY(-75deg);opacity:.3}to{transform:none;opacity:1}}
+@keyframes fb{from{transform:rotateY(75deg);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.flip-f .leaf.r,.flip-b .leaf.l{animation:none}}
+.swatch{flex:1;display:flex;flex-direction:column;justify-content:flex-end;padding:26px 30px}
+.swatch .big{font-size:30px;line-height:1.15}
+.swatch .sm{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;opacity:.85;margin-top:6px}
+.kicker{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.r h2{font-size:34px;font-weight:normal;margin:8px 0 22px;line-height:1.1;overflow-wrap:anywhere}
+.vals{width:100%;border-collapse:collapse}
+.vals td{padding:13px 0;border-top:1px solid var(--line);vertical-align:middle}
+.vals tr:last-child td{border-bottom:1px solid var(--line)}
+.vals td:first-child{width:70px;font-size:12px;letter-spacing:.16em;color:var(--muted)}
+.vals .v{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px}
+.copy{background:none;border:1px solid var(--line);border-radius:4px;padding:3px 9px;font-size:12px;color:var(--muted);float:right}
+.copy:hover{border-color:var(--accent);color:var(--accent)}
+.pgno{margin-top:auto;padding-top:18px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 16px;font-size:15px}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent);filter:none}
+.btn.danger{background:none;color:#a33;border:1px solid #dcc;font-size:13px;padding:6px 10px}
+.field{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:16px;margin:6px 0 14px}
+label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.msg{min-height:22px;font-size:14px;margin:10px 0;color:var(--accent)}
+.msg.warn{color:#a66a00}.msg.err{color:#a33}
+p{line-height:1.55}
+.cover{flex:1;background:linear-gradient(135deg,#0d3b24,#1f6b44 55%,#0f4a2e);color:#eaf6e4;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:30px;border:10px double rgba(234,246,228,.35);margin:14px;border-radius:4px}
+.cover .t1{letter-spacing:.4em;font-size:13px;text-transform:uppercase;opacity:.8}
+.cover .t2{font-size:52px;line-height:1.05;margin:16px 0}
+.cover .t3{font-style:italic;opacity:.85}
+.contents{list-style:none;margin:0;padding:0}
+.contents li{border-top:1px dotted var(--line)}
+.contents button{display:flex;width:100%;background:none;border:0;padding:7px 2px;text-align:left;color:var(--ink);font-size:15.5px}
+.contents button:hover{color:var(--accent)}
+.contents .c{margin-left:auto;color:var(--muted);font-size:13px}
+.sectl{flex:1;display:flex;flex-direction:column;justify-content:center;padding:30px 36px;color:#fff}
+.sectl .n{font-size:13px;letter-spacing:.3em;text-transform:uppercase;opacity:.8}
+.sectl .nm{font-size:46px;line-height:1.05;margin:10px 0}
+.mosaic{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:4px}
+.mosaic button{aspect-ratio:1;border:0;border-radius:3px;padding:0}
+.mosaic button:hover{outline:2px solid var(--ink);outline-offset:1px}
+footer{flex:none;display:flex;align-items:center;justify-content:center;gap:12px;padding:10px;color:#cfe3cf;font-size:14px}
+footer input{width:70px;text-align:center;padding:5px;border-radius:5px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff}
+.nav{background:#e6f2e6;color:#10231a;border:0;border-radius:50px;padding:8px 18px;font-size:15px}
+.nav:disabled{opacity:.35;cursor:default}
+@media (max-width:820px){
+ @supports (height:100dvh){body{height:100dvh}}
+ #toc{position:fixed;z-index:5;top:0;bottom:0;left:0;box-shadow:0 0 40px #000;width:min(310px,86vw);transition:transform .25s}
+ #toc.closed{margin-left:0;transform:translateX(-110%);box-shadow:none}
+ #tocclose{display:block;float:right;color:var(--ink);border-color:var(--line);background:#fff;font-size:13px;padding:4px 10px;margin-top:-4px}
+ #search,.field,select.field{font-size:16px}
+ header{gap:6px;padding:8px 10px}
+ .hbtn{font-size:13px;padding:6px 8px;white-space:nowrap}
+ .stage{padding:4px 8px}
+ footer{gap:6px;padding:8px 6px;font-size:13px}
+ .nav{padding:8px 12px;font-size:14px}
+ footer input{width:58px}
+ #toast{bottom:58px;width:max-content;max-width:92vw}
+ .book{flex-direction:column;height:100%}
+ .leaf.l{flex:0 0 38%;border-radius:6px 6px 0 0}
+ .leaf.r{border-radius:0 0 6px 6px;padding:20px}
+ .r h2{font-size:26px;margin-bottom:12px}
+ .cover .t2{font-size:30px;margin:8px 0}.sectl .nm{font-size:32px}
+ .is-cover .leaf.l{flex:0 0 auto}
+ .cover{flex:none;padding:16px 12px;margin:8px;border-width:6px}.cover .t1{font-size:11px}.cover .t3{font-size:14px}.cover .cr{margin-top:10px;font-size:13px;line-height:1.5}
+ header h1{font-size:15px}
+}
+@media (max-width:600px){header h1{display:none}header{justify-content:space-between}}
+</style>
+</head>
+<body>
+<noscript><div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:99;background:#10231a;color:#eaf6e4;padding:28px 24px;font-family:Georgia,serif;font-size:17px;line-height:1.5;overflow:auto">
+<h1 style="font-weight:normal;font-size:26px">The Green Encyclopedia</h1>
+<p>This viewer has scripts turned off, so the encyclopedia cannot run here.</p>
+<p><b>On an iPhone or iPad:</b> the built-in file preview never runs scripts. Open the encyclopedia from a web address in Safari, or open this file with an HTML viewer app from the App Store.</p>
+<p><b>On a computer:</b> open this file in Chrome, Edge, Firefox or Safari.</p>
+</div></noscript>
+<header>
+  <button class="hbtn" id="tocbtn" title="Show or hide the table of contents">☰ Contents</button>
+  <h1>The Green Encyclopedia</h1>
+  <button class="hbtn" data-goto="discover">✦ Discover a shade</button>
+  <button class="hbtn" data-goto="add">＋ Add your own</button>
+</header>
+<div class="wrap">
+  <aside id="toc">
+    <div class="tochead"><button class="hbtn" id="tocclose" title="Close the table of contents">✕ Close</button><h2>Table of Contents</h2><input id="search" type="search" placeholder="Search by name or hex…"><div id="selbar" hidden><span id="selcount"></span><select class="field" id="selmove" title="Move the selected shades"></select><button class="btn danger" id="selrm">Remove</button><button class="btn ghost" id="selclr">Clear</button></div></div>
+    <div id="toclist"></div>
+  </aside>
+  <main>
+    <div class="stage"><div class="book" id="book"><div class="leaf l" id="L"></div><div class="leaf r" id="R"></div></div></div>
+    <footer>
+      <button class="nav" id="prev">◀ Previous</button>
+      <span>Page <input id="pg" type="number" min="1"> of <span id="total"></span></span>
+      <button class="nav" id="next">Next ▶</button>
+    </footer>
+  </main>
+</div>
+<div id="toast" hidden></div>
+<div id="bk" hidden><div class="dlgbox"><div id="bkmsg" style="line-height:1.5;margin-bottom:10px"></div>
+<textarea id="bktext" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+<div class="row" style="margin-top:12px"><button class="btn" id="bkshare">Share or save as a file</button><button class="btn" id="bkcopy">Copy text</button><button class="btn ghost" id="bkfile">Choose a file</button><button class="btn" id="bkimport">Import pasted text</button><button class="btn ghost" id="bkclose" style="margin-left:auto">Close</button></div>
+<div class="msg" id="bknote"></div></div></div>
+<div id="dlg" hidden><div class="dlgbox" role="alertdialog" aria-modal="true"><div id="dlgmsg"></div><div class="row" style="justify-content:flex-end;margin-top:18px"><button class="btn ghost" id="dlgcancel">Cancel</button><button class="btn" id="dlgok">OK</button></div></div></div>
+<input type="file" id="importfile" accept=".json,application/json" hidden>
+<script>
+/* ---------- Predefined shades (from colorguide.org/green, in the site's section order) ---------- */
+const RAW=`@Basics
+Fir:3a725f;Dill:778c5f;Eden:244c34;Envy:409264;Fern:507b49;Frog:58bc08;Jade:005c2f;Kale:5a7247;Kiwi:a6ca41;Lawn:62a52b;Leaf:71aa34;Leek:98d98e;Lime:b5d458;Mint:94ffd4;Moss:638b27;Negi:3ad656;Noni:ccf17b;Nori:2d5e22;Okra:b4d583;Palm:97c03b;Pine:2b5d34;Sage:adc18e;Tree:02a001;Vert:558449;Algae:54ac68;Basil:879f84;Beryl:477f6e;Chard:218506;Chive:208c00;Gecko:8be180;Green:008000;Holly:0f9d76;Mache:4fba2e;Salad:6dc35e;Shiso:63a950;Verde:7fb383;Yucca:a2d7c9;Bamboo:75ae61;Basalt:192b1b;Campus:8ea883;Catnip:6b8a60;Chives:a4c074;Clover:008f00;Fennel:def4d8;Hinoki:2c4233;Laurel:a9ba9d;Mantis:74c365;Matcha:a0d404;Meadow:8bba94;Midori:27a30a;Patina:639283;Pickle:78954b;Sencha:b7f996;Wakame:0f260d;Wasabi:9dbe3a;Wreath:137a2a;Arugula:67b56b;Avocado:568203;Blarney:00a776;Cabbage:e0f7c7;Celadon:ace1af;Edamame:04a13f;Emerald:0d9378;Jadeite:38c6a1;Kabocha:044a05;Lettuce:bed38e;Limeade:c8ef5c;Martian:136c51;Mermaid:46fec6;Oregano:6ca83c;Parsley:305d35;Peridot:69e322;Perilla:709166;Phthalo:115d45;Sapling:d7f3dd;Seaweed:35ad6b;Spinach:3e7543;Tadpole:86b416;Bay Leaf:2b562b;Bok Choy:0c490b;Broccoli:337d2f;Cilantro:aed682;Cucumber:006400;Go Green:1ae137;Honeydew:f0fff0;Jalapeno:248734;Key Lime:aeff6e;Lime Pie:adf0cb;Mint Ice:bde8d8;Old Lime:aec571;Rosemary:a5c545;Seedling:c0cba1;Snow Pea:6ccc7b;Vineyard:819e84;Viridian:40826d;Zucchini:006e1f;Applemint:cdeacd;Artichoke:8f9779;Asparagus:77ab56;Bud Green:79b465;Chameleon:47f1a1;Cold Mint:00ffbb;Cool Mint:80ffdb;Coriander:48532f;Elm Green:547053;Evergreen:11574a;Green Ant:04c791;Green Ash:a0daa9;Green Gum:95e3c0;Green Ice:d7eee4;Green Pea:90b52a;Ink Green:1c6a35;Ivy Green:0ea848;Jack Pine:21bc44;Lime Soap:7af9ab;Mistletoe:8aa282;Peter Pan:19a700;Sage Moss:9aab73;Sea Green:2e8b57;Snow Peas:73b52c;Spearmint:64bfa4;Taro Leaf:3a6f4f;Aqua Green:0aecbd;Baby Green:bfffc9;Camouflage:8bac71;Chartreuse:7fff00;Dark Green:006400;Deep Green:044d48;Endor Pine:33691e;Eucalyptus:859c83;Golf Green:008763;Green Bean:15b311;Green Pear:79be58;Guava Leaf:80d496;Jade Green:00a86b;Lawn Green:7cfc00;Leaf Green:5ca904;Lemon Balm:16a305;Leprechaun:29906d;Mint Julep:c7e7d2;Nile Green:a7c796;Ocean Pine:095c47;Opal Green:157954;Pale Green:98fb98;Palm Green:20392c;Pineneedle:344d41;Plum Green:3f8b4b;Root Green:006130;Sour Green:84b977;Sugar Cane:b1d34d;Tree Green:2a7e19;True Green:089404;White Mint:e2f1e5;Wintermint:9ad6c5;Young Leaf:b0c86f;Baby Cactus:d1f6cf;Bamboo Leaf:4faf5a;Banana Leaf:079427;Cedar Green:325e45;Cloud Green:f5fff0;Coral Green:007050;Crush Green:007355;Dark Cactus:0e6245;Dill Pickle:00701d;Druid Green:427131;Earth Green:05af33;Elite Green:133700;Faded Green:7bb274;Fruit Salad:4ba351;Green Chalk:3ae57f;Green Grape:78b778;Green Jelly:349b82;Green Mamba:2a5c34;Green Stone:265747;Hedge Green:005020;Jade Powder:2baf6a;Jungle Moss:446d46;Kelly Green:349c5f;Kombu Green:354230;Light Green:90ee90;Maple Green:3c7951;Ocean Green:3b9477;Pastel Mint:cef0cc;Pastel Moss:83a58b;Pear Cactus:91af88;Poker Green:35654d;Royal Green:385d47;Sheen Green:6ab59c;Slate Green:658d6d;Smoke Green:a8bba2;Spinach Dip:b1cdac;Stark Green:042827;Storm Green:115051;Summer Peas:0bc361;Swiss Chard:39803d;Troll Green:014e2e;Witch Green:0b360d;Alaskan Moss:05472a;Alpine Green:005f56;Bottle Green:004835;Cactus Green:749a56;Celery Green:c2fdb6;Chrome Green:354733;Cobalt Green:00855d;Cottage Lime:d7ffa8;County Green:1b4b35;Emerald Mint:d1fad1;Forest Green:16493f;Gothic Green:253901;Green Pastel:c5e2c3;Green Pepper:228800;Green Velvet:127453;Hakone Green:14301a;Hunter Green:355e3b;Jungle Green:048243;Marble Green:277063;Myrtle Green:317873;Night Cactus:193816;Pale Avocado:dbffd2;Ranger Green:1b4f1c;Tennis Green:008163;Timber Green:324336;Verona Green:3f4a3c;Zombie Green:466b4c;Antique Green:29675c;Avocado Green:87a922;Cadmium Green:006b3c;Canadian Pine:2e7b52;Ceramic Green:3bb773;Emerald Green:046307;Hibiscus Leaf:0c703a;Lettuce Green:99d716;Mineral Green:506355;Nordic Forest:2e4833;Peacock Green:006a50;Phthalo Green:123524;Prairie Green:50a400;Pumpkin Green:255222;Seafoam Green:1de9b6;Verdant Green:12674a;Aquarium Green:66cdaa;Brooklyn Green:23bd9f;Green Tea Leaf:1e490b;Hawaiian Green:68b444;Rousseau Green:175844;Sunflower Leaf:1c5734;Caribbean Green:00cc99;Dark Green Mint:27ac9f;Grey Blue Green:5f9081;Pastel Cucumber:daf8d0;Pistachio Glass:ebfbe6;Pistachio Green:a9d39e;Slytherin Green:083503;Broadleaf Forest:014421;Charleston Green:232b2b;Old Jungle Green:366c4e;Royal Navy Green:0e5952;Watermelon Green:126d2e;Winebottle Green:003821;Beach House Green:dbffef;Cactus Blue Green:4bad99;Hinterlands Green:304112;Pear Green Pastel:73ca91;Transparent Green:ddffdd;Ultramarine Green:006b54;Antique Pine Green:008800;Victorian Viridian:056f53;Wintergreen Shadow:4f9e81;British Racing Green:004225;Thousand Years Green:316745
+@Very Light Green
+Lake Mist:f6fdf8;Meringue:f6ffed;Green Mist:f1ffef;Honeydew:f0fff0;White Green:edffee;Ocean Mist:e1fff8;Mint Nebula:e0fff6;Creamy Chartreuse:eff9ea;Dawn Frost:e2faf3;Milky Lime:ecfde6;Icy Mint:e3f8ee;Snowy Jade:e9fee1;Sorbet Mint:ecfbe1;Mint Frost:dafcf1;Very Light Leek:e9f7e7;Milky Kiwi:e0ffe4;Mint Milk:e1f4eb;Green Pearl:e2ffde;Icy Aloe:e5fddc;Mint Quartz:d5fdec;Moss Mist:ebf5de;Jade Mist:e3fcde;Polar Mint:d4fbee;Clear Mint:e2fcde;Lime Glaze:effdd0;Mellow Ash:e4efe9;Mint Mist:d0fdef;Olive Mist:ebf2de;Frosty Air:d9f1f0;Milky Fern:e7f5de;Snowdrop:eeffcc;Dew:e5ece6;Freshmint:d9f4ea;Dull Mint:ddf3e6;Very Light Green:e2f1e2;Very Light Sapling:ddf4e2;Snow Mint:ccffe5;Pale Lime:e8ffc8;Morning Dew:d3f8e2;Fennel:def4d8;Sea Mist:dbeee0;Seafoam:c9f5ea;Berkeley:d8f3dc;Lime Pear:dcffcc;Sapling:d7f3dd;Rare Mint:dff1d6;Pearl Mint:d7f3db;Spring Dew:d4f5dc;Warm Winter:d4ede3;Very Light Salad:dbf0d8;Very Light Mermaid:bafee9;Pale Meadow:e1f4cb;Cold Lime:d5f2d8;Cabbage:e0f7c7;Duck Egg:d5ebdd;Limelight:dffdc0;Mignonette:e1edcd;Aqua Glass:d2e8e0;Jade Quartz:c6f2e0;Flat Celery:e8f7b8;Olive White:e6f3be;Baby Cactus:d1f6cf;Baby Mint:cff0d7;Green Paper:ddeccc;Lime Mist:e0f0c5;Yucca Cream:cbe9e1;Pastel Sage:d6ebd1;Creamy Emerald:c8f2ce;Very Light Lettuce:dae6bf;Very Light Parsley:d1dbd2;Creamy Green:d0e7c5;Very Light Clover:c6e6c6;Very Light Yucca:b4dfd3;Very Light Matcha:d8ed98;Very Light Okra:cce2ab;Creamy Mint:aaffaa;Creamy Pear:d1e29b;Very Light Shiso:bad9b2;Very Light Broccoli:b5d0b4;Very Light Fern:b8cab6;Very Light Gecko:a1e698;Very Light Frog:b0df8a;Creamy Laurel:a7c9a7;Creamy Celery:a9d08e;Creamy Basil:a9b78d;Creamy Kiwi:a9d172;Creamy Green Tea:a4a68c;Very Light Kale:9caa90;Creamy Lime:a9d655;Creamy Avocado:a4bb65
+@Light Green
+Light Peppermint:efffeb;Light Seafoam:d7f7ef;Pale Avocado:dbffd2;Pale Mint:c5fee9;Light Seafoam Green:d5f3e2;Pale Meadow:e1f4cb;Light Onion:e3f2ca;Pale Celadon:d3efd4;Light Key Lime:e3f7b8;Light Celery:d8ffba;Pale Applemint:d2ecd2;Light Agave:d8e4cf;Light Green Grape:dbf4b8;Light Surf Green:c7e6d6;Pale Cactus:cfe6c8;Light True Green:c5f0c7;Light Celadon:c3e9c5;Light Wintermint:b9e2d6;Light Mint:b6ffbb;Pale Chartreuse:ddf09c;Pale Citron:ccff99;Pale Lake Green:afded2;Light Aloe:bfe5b1;Light Mint Green:a6fbb2;Pale Cilantro:c7e2a8;Light Cucumber:cef092;Light Pistachio:c1ddae;Pale Grass:c1dead;Light Cilantro:c4e1a5;Light Aloe Vera:bbef9f;Light Green Sea:8de6d5;Light Pistachio Green:badbb1;Light Pea Green:c4fe82;Light Wintergreen:7df1d2;Light Lichen:b4cabf;Light Grey Green:b7e1a1;Pale Matcha:cfe981;Pale Slate Green:a8cebd;Light Matcha:bfe488;Pale Green:98fb98;Light Basil:b3c3b2;Light Ash Green:b3c2ae;Light Jade:8be4b3;Light Green Earth:a9d5a2;Light Campus:b2c3aa;Light Sheen Green:98cbba;Light Caribbean Green:6de1c4;Light Arugula:9fd0a1;Light Green Acorn:b9ec6a;Pale Pear Green:c6cb7e;Light Green:90ee90;Light Tea Green:c1d676;Pale Fern Green:b6e273;Light Kiwi:bed874;Pale Olive:b9cc81;Light Sap Green:b7d178;Pale Teal Green:82cbb2;Light Citrus:d0d557;Light Green Pear:a1d18a;Light Oregano:a6ca8a;Light Palm:b5d273;Light Green Blue:56fca2;Light Absinthe:93f46a;Pale Jade:77c3b4;Light Ivy:a8b989;Light Wasabi:b1d464;Light Marine Green:79bfaf;Light Pine:92c089;Light Olive:acbf69;Light Olive Green:a7b966;Light Stone Green:8ca98d;Light Cactus:a6d344;Light Avocado Green:a5be59;Light Birch Green:9db567;Light Pickle:95ac72;Light Grass Green:99c24d;Light Dill:8c9e78;Light Green Jelly:58ad98;Light Jalapeno:6cae76;Light Tree Green:72a967;Light Edamame:47ba72;Light Ultramarine Green:4f9889;Light Grass:8e9c43;Light Spinach:649068;Light Kelp:7a845a;Light Nori:618659;Light Watermelon Green:4d9162;Light Jungle Green:339966;Light Winebottle Green:66877f;Light Kombu Green:77a177
+@Soft Green
+Soft Mint:e6f9f1;Soft Electric Melon:e1ffd1;Muted Dew:d8e8d8;Soft Leaf:d8e2d1;Soft Celadon:c6eac8;Soft Moss:cce1c7;Soft Pine:c9dcc9;Muted Sage:cedabc;Soft Electric Kiwi:bcffa6;Soft Electric Aloe:96ffc2;Soft Lime:cbe3a9;Muted Green:c1d6bf;Soft Lime Green:96ffbc;Soft Fern:c1cdc1;Muted Kiwi:cee196;Soft Lake Green:a1d8ca;Soft Pistachio:b2d8b8;Muted Matcha:d0e984;Soft Green:b3dbac;Muted Mint:a8d8b8;Soft Meadow:b0d0b6;Soft Pear Green:cfd493;Soft Sage:bfcea6;Muted Bamboo:b3d2a8;Soft Electric Wasabi:c2ff6b;Soft Cactus:a9cfae;Soft Emerald:93e1b0;Modern Soft Mint:9ed0b4;Soft Electric Lime:b3ff70;Muted Yucca:a8c8b0;Soft Chartreuse:caf25f;Soft Thyme:a2cda1;Soft Evergreen:9dbab4;Soft Viridian:5de8bc;Soft Palm:b6d275;Muted Kale:a4b199;Soft Mint Macaron:a0c18a;Muted Peas:a8c878;Soft Matcha:b9dd52;Soft Kiwi:b8d25d;Muted Frog:a8c870;Soft Basil:9aae97;Soft Lime Gold:beba65;Dusty Jade Green:7bb5a3;Muted Pea:a8b870;Muted Jade:77bc9a;Muted Okra:a0b870;Soft Lawn:95c270;Muted Pine:8aa58f;Soft Lettuce:91c06b;Soft Guacamole:afc641;Soft Green Grass:9dbe5a;Muted Algae:90b070;Dusty Olive:929e78;Soft Stone Green:81a182;Dusty Green:76a973;Muted Olive:96a353;Muted Grass:90a850;Muted Verde:78b050;Soft Midori:67be53
+@Pastel Green
+Pastel Pear:edffcd;Light Pastel Pea:e5f5db;Antique Green Pastel:d0fae2;Light Pastel Mint:dbf4d8;Pastel Baby Cactus:d8f7d7;Pastel Emerald Mint:d6fad6;Light Green Pastel:dbfec9;Pastel Cucumber:daf8d0;Lime Pastel:e0febf;Pastel Celery Green:d4fdcc;Pastel Green Onion:dffebd;Pastel Avocado:dcf4c9;Pastel Sage:d6ebd1;Pastel Agave:d4e8d4;Chartreuse Pastel:c6fdcc;Pastel Wintermint:cae8dc;Pastel Green Mint:d9edc6;Pastel Lime Pie:c1f3d8;Pastel Mint Julep:cde9d6;Pastel Celadon:cceed1;Pastel Seafoam:c8f8cb;Pastel Mint:cef0cc;Neon Pastel Mint:b9f5d8;Pastel Grass Green:d2edc3;Pastel Green Tint:c8f1c8;Pastel Limeade:d3f4ab;Original Green Pastel:b6edcd;Pastel Mache:c8e8c0;Pastel Chameleon:a6f8d1;Pastel Alfalfa:d8e8a8;Pastel Aloe:b8e8c8;Pastel Peppermint:a8e8d8;Pastel Mermaid:8cfedb;Pastel Sea Green:92fdd6;Pastel Pistachio:b2f1c1;Pastel Leaf:c8e8b0;Pastel Onion:d8e8a0;Citrus Pastel:dafb8a;Pastel Chartreuse:dcf48e;Pastel Mint Chalk:a7f3c3;Pastel Grass:d2ff8a;Classic Green Pastel:90f9d1;Pastel Seafoam Green:8bf3d9;Pastel Aqua Green:96f1cf;Light Pastel Green:b2fba5;Beach Pastel Green:a8e6c2;Pastel Cilantro:c6e2a7;Pastel Green Porcelain:b2ebb2;Neon Pastel Pine:9fe6c8;Frosted Pastel Green:b0ebb0;Pastel Pea:bee7a5;Dark Pastel Mint:a7e0c2;Pastel Julep:a8e8b8;Pastel Brooklyn Green:97dfd1;Pale Pastel Green:aeeaae;Chalky Pastel Green:adeaad;Mint Green Pastel:87f6c6;Pastel Kiwi:d1e88a;Neon Pastel Lime:c8ff7a;Pastel Meadow:96d99b;Pastel Celery:aceda4;Powdery Pastel Green:aae9aa;Neon Pastel Jade:7ff2c9;Pastel Lake Green:9cd6c7;Pastel Negi:a0ebad;Neon Pastel Green:8ff0b8;Pastel Basil:b9c7b7;Pastel Kelp:c8d890;Pastel Limette:d8e870;Pastel Mint Green:add0b3;Retro Green Pastel:a2d8b2;Pastel Neon Pear:b2f380;Neon Pastel Emerald:6ff2c2;Pastel Green Grape:a8d0a8;Pastel Emerald:96f495;Pastel Forest:b8c4a2;Pastel Olivine:b6cc9a;Leaf Green Pastel:a3cea9;Pastel Sour Green:aacea1;Pastel Sapling:a8d898;Creamy Pastel Green:99e599;Pastel Acid Lime:cbe764;Pastel Sheen Green:93c9b7;Pastel Absinthe:94db9f;Pastel Jadeite:77d8bf;Pastel Green Pear:a3d28d;Pastel Pear Green:c9ce66;Pastel Green Silk:8be28b;Pastel Arugula:94cb97;Pastel Palm:b4d171;Smoky Pastel Green:a2cb86;Pastel Green Cotton:88e188;Pastel Olive:a4c983;Pastel Pickle:a8bb8b;Pastel Ceramic Green:79ce9f;Pastel Viridian:7abbb1;Pastel Algae:85c493;Pastel Matcha:93bb8b;Plain Pastel Green:7dde7d;Pastel Jade Green:63c9a4;Pear Green Pastel:73ca91;Pastel Green:77dd77;Pastel Cactus:7fb099;Cinetone Pastel Green:78da75;Cold Pastel Green:75da78;Deco Pastel Green:75dd75;Evergreen Pastel:3df098;Pastel Green Suede:79d874;Royal Pastel Green:74d879;Victorian Pastel Green:7bd673;Bitter Pastel Green:72de72;Pastel Fruit Salad:7bbb7f;Pastel Moss:83a58b;Pastel Kelly Green:6ab68a;Pastel Spinach:39df8d;Pastel Green Jelly:5aae99;Pastel Canadian Pine:6ea387;Pastel Myrtle:778f82;Pastel Broccoli:72a56f;Pastel Nori:5d8354
+@Medium Green
+Medium Celadon:a1d3b3;Medium Fir:308550;Medium Pea:678d3d;Medium Eden:168f20;Medium Fern:4c7945;Medium Jade:12835b;Medium Kiwi:7b9b38;Medium Leek:90da93;Medium Lime:7aa334;Medium Mint:4db69f;Medium Moss:677c4b;Medium Nori:27711d;Medium Palm:507c3a;Medium Pine:2d7637;Medium Algae:50af63;Medium Green:3c824e;Medium Olive:7e8140;Medium Cactus:578c24;Medium Celery:a8c073;Medium Forest:3a823e;Medium Mantis:78c461;Medium Matcha:88b429;Medium Meadow:85bc8e;Medium Midori:24a809;Medium Myrtle:487352;Medium Patina:599c8f;Medium Avocado:4c8a46;Medium Emerald:4da36c;Medium Juniper:537c5e;Medium Mermaid:43f3be;Medium Oregano:7ea841;Medium Seaweed:33a96d;Medium Broccoli:2e872b;Medium Cilantro:b2c97a;Medium Key Lime:9ce56a;Medium Parakeet:89c540;Medium Rosemary:728b7a;Medium Shamrock:4dae76;Medium Viridian:3a7e6a;Medium Zucchini:12752c;Medium Asparagus:7f9c58;Medium Chameleon:4ee79a;Medium Coriander:337d24;Medium Evergreen:2a6b36;Medium Guacamole:b8c843;Medium Ink Green:0d9223;Medium Jack Pine:1fbe41;Medium Malachite:24996d;Medium Peter Pan:18aa00;Medium Pistachio:8ba665;Medium Sap Green:45961c;Medium Sea Green:3cb371;Medium Chartreuse:c5d52b;Medium Gooseberry:8ba93b;Medium Green Bean:14ab1a;Medium Green Pear:7dbf55;Medium Grey Green:399c6d;Medium Leprechaun:4caf50;Medium Root Green:008724;Medium Sour Green:80bb73;Medium Tree Green:258a16;Medium Wintermint:90d8c8;Medium Cedar Green:268434;Medium Earth Green:04ab37;Medium Green Apple:8fcb58;Medium Green Chalk:36d785;Medium Hedge Green:009512;Medium Maple Green:37824b;Medium Slate Green:6b9172;Medium Smoke Green:9dbf98;Medium Storm Green:0a8d7c;Medium Taffy Green:88b04b;Medium Green Pepper:1d9800;Medium Jungle Green:068344;Medium Spring Green:00fa9a;Medium Tennis Green:008366;Medium Timber Green:247426;Medium Zombie Green:348b3a;Medium Peacock Green:188a7a;Medium Prairie Green:4da600;Medium Verdant Green:0d7c40;Medium Rousseau Green:13724f;Medium Tropical Green:3d9441;Medium Caribbean Green:00d3a7;Medium Pistachio Green:a2d4a1;Medium Watermelon Green:0f8227;Medium Winebottle Green:008c34;Medium Hinterlands Green:246b0d;Medium Ultramarine Green:228369;Medium Wintergreen Shadow:4aa388
+@Bright Green
+Erin:00ff40;Negi:3ad656;Olmo:32ee20;Soto:49d11d;Vega:06f255;Bruce:4bd337;Chloe:14e119;Hadas:10e17b;Seika:01e85f;Yoshi:00ee76;Campos:43f20f;Kermit:3ce63c;Silvan:12e00a;Sphene:4dff4d;Spring:00f900;Boisson:52ed26;Chayote:14e310;Encinar:1ddb4f;Mermaid:46fec6;Silvano:3df403;Slushie:22e255;Arboleda:1bd81f;Boissier:0fe21d;Delbosco:2df94f;Go Green:1ae137;Mangrove:5fe752;Oak Leaf:4ddd2c;Cold Mint:00ffbb;Cool Mint:80ffdb;Glow Jade:00e187;Glow Mint:98ffb0;Greencode:55ff56;Hot Green:25ff29;Lime Glow:00ff66;Lime Star:00ff00;Melon Pop:68df7d;Neon Toad:30dd01;Pradillas:12f52e;Shinryoku:04e35a;Veronique:1ad81b;Viridiana:22df16;1930s Mint:88ffcc;Acid Green:00ff8c;Aqua Green:0aecbd;Aventurine:6bf6c2;Glow Green:00ff47;Grape Vine:64d94a;Gummy Bear:71e05a;Gummy Worm:83f06b;Kiwi Jelly:7dff81;Lime Punch:33cc00;Mint Gloss:7ff9ba;Mint Green:00ff87;Sharp Lime:66ff33;Sugar Lime:91ff7f;Alien Green:00ff54;Bright Leaf:27ff25;Bright Mint:98ff98;Chataignier:59d832;Creamy Mint:aaffaa;Green Aster:5fe645;Green Chalk:3ae57f;Green Glass:62e475;Jungle Frog:1ff22c;Melon Jelly:4fe160;Surge Green:1ced06;Vivid Green:2fef10;Wintergreen:24e8b3;Aurora Green:0aff02;Barium Green:8fff9f;Corner Green:3aff00;Garden Grass:0fcb3c;Matrix Green:55ff55;Pine Sapling:1cd709;Verde Mantis:30c700;Antique Alien:0cff0c;Bright Sprout:28f23f;Cinnamon Leaf:4bd23f;Crystal Candy:82f082;Frosted Grass:70f37f;Green Lantern:2ee203;Gumdrop Green:58c84a;Longleaf Pine:48d035;Renewal Green:10c130;Tropical Lime:00ff33;Vibrant Green:0add08;Lollipop Green:66d64a;Luminous Green:4dcf54;Macaroon Green:4dcd53;New Wave Green:11ff11;Shamrock Shake:93ffaa;Boomslang Green:1fb53a;Bright Absinthe:44f513;Bright Greenery:3def06;Cyberpunk Green:13e014;Dragonfly Green:00f40a;Pistachio Candy:95f57a;Spearmint Candy:79e772;Four Leaf Clover:1ad73c;Glitchy Tv Green:02c906;Industrial Green:35fa00;Peppermint Candy:4fc46b;Environment Green:31d420;Evergreen Juniper:42d13a;Green Dragonfruit:82de68;Highlighter Green:1bfc06;Ikebukuro Emerald:32ce28;Pistachio Granite:6dea68;Bright Light Green:2dfe54;Green Chili Pepper:47d73c;Light Bright Green:53fe5c;Sour Apple Gumball:11c125;Verdant Chartreuse:4bea47;Western White Pine:41cf4b;Bright Green Marker:66ff66;Evergreen Mistletoe:48c356;Sustainability Green:19e23a;Watermelon Jellybean:14c900;Cinetone Pastel Green:78da75;Vintage Monitor Green:55ff54
+@Neon Green
+Neon Ivy:28e10c;Neon Jade:01f9a5;Neon Leaf:b2f252;Neon Lime:aaff00;Neon Mint:00ff73;Neon Pear:c5ff33;Neon Pine:18f179;Neon Toad:30dd01;Neon Vine:70ec01;Neon Gecko:acee11;Neon Green:37f714;Neon Nerve:b8ff3a;Neon Slime:59ff2a;Neon Bamboo:a4f404;Neon Cactus:cbdc01;Neon Celery:0de81f;Neon Garden:0af415;Neon Iguana:1af013;Neon Lizard:a6f702;Neon Mantis:a5fc10;Neon Matcha:99de5b;Neon Meadow:abff53;Neon Patina:25e89e;Neon Pickle:a0d111;Neon Green:b3ff00;Neon Turtle:17f928;Neon Wasabi:aec138;Spring Neon:3ce643;Neon Emerald:27e703;Neon Lettuce:30e02d;Electric Kiwi:90f13b;Electric Lime:ccff00;Electric Mint:00ff99;Electric Pear:57e811;Neon Absinthe:18ee1c;Neon Parakeet:85db18;Neon Shamrock:6cec35;Deep Neon Lime:57db03;Electric Green:21fc0d;Electric Matsu:b8e615;Electric Olive:a2d92b;Electric Taffy:c2fb4d;Neon Alligator:4aec28;Neon Chameleon:12fa24;Neon Crocodile:14d60b;Neon Green Pop:28f304;Neon Guacamole:68dd0a;Neon Pop Green:12f306;Electric Cactus:00d46a;Electric Menthe:0ce6a1;Electric Verdon:0ceca4;Lush Neon Green:2ff343;Neon Chartreuse:dfff00;Neon Frog Green:8cf70e;Neon Green Soda:21fd06;Neon Lemongrass:bbff00;Neon Mint Green:1cf787;Electric Emerald:05d96d;Electric Peridot:afff00;Electric Seafoam:6cfacd;Neon Alien Green:84ed06;Neon Grasshopper:4aff25;Neon Green Ghost:23f402;Neon Green Glass:2be711;Neon Miami Green:03e6b7;Neon Snake Green:00f82d;Neon Viper Green:8df90a;Neon Witch Green:9ade02;Turbo Neon Green:1cfa34;Desert Neon Green:93f819;Electric Absinthe:16fa8e;Glichy Green Neon:7bf633;Neon Green Marker:39ff14;Neon Lime Macaron:45fa06;Neon Python Green:05f649;Neon Sprout Green:5bfd04;Neon Zombie Green:69d713;Electric Artichoke:93dc0b;Electric Clochette:a7ec14;Electric Guacamole:b4eb1b;Electric Lime Mint:80ff00;Neon Botanic Green:bcf531;Neon Glitter Green:a2ff30;Electric Lawn Green:49ff00;Electric Mint Green:59f59a;Modern Electric Lime:c5ff00;Soft Electric Matcha:bcf224;Maximum Electric Lime:d3ff00;Neoncore Spring Green:98ff51;Classic Neon Yellow Green:cdfc2b
+@Deep Green
+Deep Dill:6b7f56;Deep Fern:0d5f47;Deep Jade:1e5a46;Deep Kelp:006633;Deep Kiwi:4d5e09;Deep Lime:558b2f;Deep Mint:0d7d6a;Deep Moss:264534;Deep Palm:2d7a60;Deep Pine:2f6b4d;Deep Sage:658059;Deep Basil:4c6c3d;Deep Cedar:173933;Deep Green:044d48;Deep Olive:677b07;Deep Celery:66b65d;Deep Clover:386c54;Deep Jungle:327a67;Deep Laurel:6a7b4c;Deep Matcha:7ebf2e;Deep Myrtle:00524d;Deep Patina:059384;Deep Wasabi:9fb838;Deep Avocado:849004;Deep Emerald:047337;Deep Viridis:2f6a53;Deep Rosemary:4f6a42;Deep Shamrock:028037;Deep Viridian:1d3a14;Deep Zucchini:144714;Deep Asparagus:6f7c4d;Deep Evergreen:397f61;Deep Green Tea:74ae4f;Deep Guacamole:8a9f43;Deep Ink Green:2c4f3a;Deep Malachite:0a4e2e;Deep Sap Green:6b7c48;Deep Aqua Green:10cc9c;Deep Blue Green:03786b;Deep Chartreuse:d1d716;Deep Golf Green:058461;Deep Gooseberry:a4b242;Deep Green Teal:0bb378;Deep Kale Green:016a5b;Deep Lake Green:98cfc0;Deep Mint Green:1a8669;Deep Moss Green:11584e;Deep Pine Green:1d3725;Deep Sage Green:506e58;Deep Surf Green:99d2bd;Deep Teal Green:0a8561;Deep Coral Green:026e4f;Deep Emerald Sea:124d3d;Deep Grass Green:6a7f45;Deep Hedge Green:004c2b;Deep Khaki Green:4f6551;Deep Light Green:8dbf56;Deep Olive Umber:404020;Deep Stark Green:032c26;Deep Stone Green:244848;Deep Storm Green:134f50;Deep Taffy Green:62b76b;Deep Wintergreen:21dab7;Moody Deep Green:3a4c36;Chrome Green Deep:2f5b3a;Deep Bamboo Green:4c9b5f;Deep Chrome Green:2c5545;Deep Citrus Green:7d9a4f;Deep Forest Green:04380f;Deep Green Pepper:3a6a47;Deep Jungle Green:004b49;Deep Lagoon Green:048375;Deep Lichen Green:6b705a;Deep Marine Green:3fa28f;Deep Myrtle Green:00524c;Deep Ranger Green:1f4d1b;Deep Spring Green:6daf61;Deep Spruce Green:164d07;Deep Tennis Green:007e66;Myrtle Deep Green:01524c;Classic Deep Green:03693d;Deep Cadmium Green:02693b;Deep Emerald Green:066206;Deep Lincoln Green:2c4924;Deep Peacock Green:13614a;Modern Deep Forest:254a18;Deep Emerald Marble:0e4022;Deep Tropical Green:388e3c;Deep Brunswick Green:1b4c3e;Deep Caribbean Green:0aad9c
+@Natural Green
+Fir:3a725f;Dill:778c5f;Fern:507b49;Frog:58bc08;Kale:5a7247;Kiwi:a6ca41;Lawn:62a52b;Leaf:71aa34;Leek:98d98e;Lime:b5d458;Mint:94ffd4;Moss:638b27;Negi:3ad656;Noni:ccf17b;Okra:b4d583;Palm:97c03b;Peas:5c9f27;Pine:2b5d34;Reed:c3d3a8;Sage:adc18e;Tree:02a001;Algae:54ac68;Basil:879f84;Chard:218506;Chive:208c00;Gecko:8be180;Grass:5cac2d;Holly:0f9d76;Onion:dbefba;Shiso:63a950;Bamboo:75ae61;Bonsai:2aad6d;Canopy:226f4a;Chives:a4c074;Clover:008f00;Forest:2e5e45;Ginkgo:9cb07d;Jardin:1e8a1b;Jungle:4a5735;Laurel:a9ba9d;Lichen:9bc2b1;Mantis:74c365;Matcha:a0d404;Turtle:667d24;Wasabi:9dbe3a;Wreath:137a2a;Arugula:67b56b;Avocado:568203;Cabbage:e0f7c7;Cricket:9be23f;Edamame:04a13f;Juniper:4b6b3c;Kabocha:044a05;Lettuce:bed38e;Parsley:305d35;Prairie:67a028;Savanna:35c047;Spinach:3e7543;Tadpole:86b416;Thicket:b7e4c7;Wetland:9ee18c;Broccoli:337d2f;Bullfrog:8a966a;Cilantro:aed682;Cucumber:006400;Honeydew:f0fff0;Jalapeno:248734;Parakeet:d1fa79;Rosemary:a5c545;Scallion:508a10;Seedling:c0cba1;Shamrock:54b229;Snap Pea:65bf1c;Zucchini:006e1f;Aloe Vera:adec17;Asparagus:77ab56;Chameleon:47f1a1;Coriander:48532f;Fava Bean:b4e986;Green Pea:90b52a;Mistletoe:8aa282;Mung Bean:5f8c05;Pistachio:93c572;Snow Peas:73b52c;Spearmint:64bfa4;Tea Green:d0f0c0;Breadfruit:7dbf4f;Gooseberry:bbf470;Watercress:73c72d;Collard Greens:385932
+@Neutral Green
+Neutral Honeydew:f2fff2;Neutral Crystal Green:f3ffec;Neutral Emerald Mint:eafcea;Neutral Willow Leaf:f1ffe0;Neutral Lime Buttercream:e8fde6;Neutral Cold Mint:e3f6f1;Neutral Pale Green:e6fee6;Neutral Lime:ecfdd9;Neutral Creamy Mint:e1ffe1;Neutral Seaweed Tea:e0f9d7;Neutral Olive Cream:ebefd5;Neutral Key Lime:e1ffca;Neutral Green Pepper:d1e6ca;Dusky Baby Mint:cbe4d1;Neutral Frosted Avocado:cfe0cb;Neutral Matcha Jelly:c9e1c9;Neutral Cilantro Leaf:cddfc6;Neutral Green Grape:c8e2c8;Neutral Bamboo:c6ddbe;Neutral Eucalyptus Sapling:bfd8c0;Neutral Green:bfd4bd;Neutral Pine Sage:b7d9b5;Neutral Mint:bee0a4;Neutral Kiwi:cede94;Neutral Cucumber:b1d0b1;Neutral Green Pear:b3d8a1;Neutral Polar Moss:b0d19c;Neutral Matcha:c2d881;Neutral Hawaiian Green:abd599;Neutral Fruit Salad:9dcda0;Neutral Grey Eucalyptus:a2b19e;Neutral Kale:a2b197;Neutral Maple Green:94b59f;Neutral Sage Stone:9ebf8b;Neutral Coriander:a3a896;Dusky Sage:a1b485;Neutral Avocado:a5ba77;Neutral Sage Wool:94b889;Neutral Broccoli:91b68c;Neutral Druid Green:98ae8b;Neutral Young Leaf:9eb47d;Neutral Cobalt Green:7eaf9b;Neutral Cedar Green:90a294;Neutral Rousseau Green:81a399;Neutral Fern:7da699;Neutral Pine:8ba38d;Neutral Viridian:7ca698;Neutral Alpine Green:73a5a0;Neutral Myrtle Green:71a19e;Neutral Artichoke:8d9781;Neutral Eucalyptus:869a81;Neutral Emerald:79a878;Neutral Drab Green:8ea069;Neutral Hedge Green:739e85;Neutral Moss:769787;Neutral Forest Green:769076;Dusky Cactus:7a8b6f;Neutral Parsley:738e73;Dusky Basil:6a7c67;Neutral Myrtle:647860
+@Dark Green
+Kelp:3f4e11;Nori:2d5e22;Pine:2b5d34;Aotake:006442;Forest:2e5e45;Harbor:06544c;Jungle:4a5735;Dark Ivy:315955;Dark Fern:0a480d;Dark Jade:008141;Dark Kelp:193a07;Dark Leaf:00793f;Dark Lime:84b701;Dark Mint:2a5443;Dark Moss:4f5a4f;Dark Pine:23382e;Dark Green:006400;Dark Olive:635d0e;Dark Yucca:8ebdb0;Navy Green:103b38;Navy Olive:2f3c18;Dark Bamboo:0d5318;Dark Cactus:0e6245;Dark Forest:4e755a;Dark Lichen:68957e;Dark Matcha:789f03;Dark Myrtle:0b3e40;Dark Sprout:009933;Dark Wasabi:7d9b46;Dark Foliage:5a7f4f;Dark Lettuce:0c481b;Dark Absinthe:858f46;Dark Broccoli:095240;Dark Fernleaf:3b5927;Dark Greenery:09533d;Dark Oak Leaf:3e4c2f;Dark Shamrock:30c39d;Dark Viridian:134227;Dark Zucchini:314935;Dark Green Tea:40611b;Dark Guacamole:757738;Dark Neon Kiwi:22b322;Dark Neon Lime:00994d;Dark Pistachio:82af65;Dark Sea Green:135851;Dark Aqua Green:0ebc7a;Dark Basil Leaf:2e4731;Dark Blue Green:005249;Dark Deep Green:223b37;Dark Gooseberry:7d9161;Dark Green Bark:4e6e48;Dark Green Mint:27ac9f;Dark Green Teal:09895a;Dark Iron Green:465746;Dark Lake Green:7cb0a3;Dark Lawn Green:5d8a3a;Dark Mango Leaf:184d0a;Dark Mint Green:20c073;Dark Neon Agave:006652;Dark Neon Lotus:008066;Dark Nori Green:283622;Dark Ocha Green:092a21;Dark Olive Drab:544f3d;Dark Olive Leaf:54593c;Dark Pear Green:a2a862;Dark Peppermint:64be9f;Dark Pine Green:415241;Dark Prismarine:527f71;Dark Tourmaline:293f39;Dark Vine Green:3e613e;Dark Wintermint:1c9b81;Deep Dark Green:2d4d3d;Flat Navy Green:1d4040;Navy Green Grey:1d6761;Teal Dark Green:006d57;Dark Algae Green:627b0e;Dark Amber Green:2a6d42;Dark Cedar Green:003003;Dark Chive Green:107553;Dark Grass Green:106504;Dark Green Earth:4c7c47;Dark Green Olive:3d6256;Dark Guava Green:319061;Dark Hedge Green:00481d;Dark Kelly Green:31955b;Dark Melon Green:1d4a2b;Dark Neon Citron:669900;Dark Neon Clover:00751a;Dark Olive Green:556b2f;Dark Wintergreen:20d3a2;Moody Dark Green:3e5633;Retro Navy Green:244449;Royal Navy Green:0e5952;Dark Jasper Green:2a5545;Dark Knight Green:1b3a44;Dark Lagoon Green:1a6460;Dark Marine Green:3ea08b;Dark Myrtle Green:1d4946;Dark Seafoam Blue:357d75;Dark Spring Green:177245;Dark Tennis Green:007056;Dark Willow Green:005d57;Modern Dark Green:1b3c12;Antique Navy Green:053801;Avocado Dark Green:3e4826;Classic Navy Green:003d02;Classic Navy Olive:43481a;Dark Cedar Needles:5b9231;Dark Juniper Green:196a4b;Dark Lincoln Green:253d18;Dark Pasture Green:196a2f;Dark Peacock Green:115a57;Dark Sequoia Green:014218;Dark Highland Green:22484b;Dark Zucchini Green:09631e;Dark Caribbean Green:00bf98;Chrysocolla Dark Green:004f39;Classic Dark Slate Green:2e5c54;Dark Green 1692 Standard:3a462f;Dark Viridian 1912 Standard:08836d
+@Very Dark Green
+Midnight Ivy:123627;Midnight Sea:1d4b50;Midnight Fern:142822;Midnight Jade:0e3229;Midnight Kelp:0b2f28;Midnight Lawn:233a16;Midnight Leaf:006534;Midnight Pine:2f4640;Midnight Sage:1b2a24;Very Dark Ivy:2b4f4b;Midnight Basil:0f3a28;Midnight Cedar:465039;Midnight Green:004637;Midnight Olive:1e2a18;Very Dark Fern:09420c;Very Dark Jade:007139;Very Dark Kelp:122a05;Very Dark Leaf:003d20;Very Dark Lime:557600;Very Dark Mint:264c3c;Very Dark Moss:303b30;Very Dark Pine:16231c;Midnight Bamboo:0c5017;Midnight Cactus:143522;Midnight Clover:18451f;Midnight Forest:20272e;Midnight Hunter:0e231b;Midnight Laurel:0f3426;Midnight Lichen:496959;Midnight Mantis:1c3f16;Midnight Myrtle:0a393b;Midnight Sprout:00832b;Midnight Spruce:0a2a1f;Midnight Wasabi:6c863c;Very Dark Yucca:6d9187;Midnight Avocado:2a3a12;Midnight Cypress:0c3326;Midnight Foliage:496840;Midnight Hemlock:0f2f23;Midnight Juniper:1a2c26;Midnight Lettuce:093b16;Midnight Seaweed:0f3a2e;Very Dark Bamboo:0b4b15;Very Dark Matcha:5b7802;Very Dark Myrtle:093739;Very Dark Sprout:006020;Very Dark Wasabi:5b7133;Midnight Absinthe:5b6230;Midnight Broccoli:074435;Midnight Fernleaf:365123;Midnight Greenery:084b37;Midnight Oak Leaf:38452a;Midnight Parakeet:0e4f3a;Midnight Rosemary:555539;Midnight Shamrock:0b4a2e;Midnight Viridian:083534;Midnight Zucchini:2a3f2e;Midnight Artichoke:2a3521;Midnight Crocodile:1a2f22;Midnight Green Tea:293f11;Midnight Malachite:0b3a33;Midnight Sea Green:0c3a36;Midnight Skobeloff:004f4b;Midnight Tea Green:24362a;Midnight Verdigris:0f4a46;Midnight Army Green:0a2c05;Midnight Basil Leaf:2a422d;Midnight Blue Green:00433b;Midnight Deep Green:284536;Midnight Eucalyptus:465245;Midnight Field Grey:3d4238;Midnight Gooseberry:606f4a;Midnight Green Mint:1c7d74;Midnight Iron Green:253e35;Midnight Lawn Green:4d7230;Midnight Mango Leaf:154609;Midnight Mint Green:15824e;Midnight Navy Green:022e00;Midnight Ocha Green:17362e;Midnight Olive Leaf:434730;Midnight Peppermint:076357;Midnight Pine Green:384738;Midnight Prismarine:497265;Midnight Teal Green:005e4b;Midnight Tourmaline:253934;Midnight Vine Green:365536;Midnight Wintermint:146f5c;Midnight Amber Green:1c4b2d;Midnight Chive Green:0b513a;Midnight Green Earth:3c6338;Midnight Guava Green:216342;Midnight Hedge Green:002910;Midnight Kelly Green:0c3a2d;Midnight Moody Green:293922;Midnight Slate Green:223e38;Midnight Stone Green:415c42;Midnight Bamboo Green:1e4026;Midnight Bottle Green:00261c;Midnight Green Marble:3a463e;Midnight Green Velvet:06250c;Midnight Island Green:0f4536;Midnight Jasper Green:1a352b;Midnight Jungle Green:162c03;Midnight Lagoon Green:114441;Midnight Marine Green:2a6e5f;Midnight Modern Green:152f0e;Midnight Myrtle Green:1e4a47;Midnight Racing Green:002414;Midnight Tennis Green:005743;Midnight Willow Green:004f4a;Midnight Cedar Needles:406722;Midnight Lincoln Green:1f3314;Midnight Sequoia Green:003c15;Very Modern Dark Green:152e0e;Midnight Paradise Green:1a5a3f;Midnight Tropical Green:0e4a3a;Very Dark Lincoln Green:1f3414;Midnight Brunswick Green:0f2b23;Midnight Caribbean Green:0b4f46;Midnight Charleston Green:212828`;
+
+const SECTIONS=[];
+RAW.split('\n').forEach(line=>{
+  if(line[0]==='@') SECTIONS.push({name:line.slice(1),colors:[]});
+  else line.split(';').forEach(c=>{const i=c.lastIndexOf(':');SECTIONS[SECTIONS.length-1].colors.push([c.slice(0,i),'#'+c.slice(i+1)])});
+});
+
+/* ---------- Colour maths ---------- */
+const hexToRgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;
+  if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}
+  return [Math.round(h)%360,Math.round(s*100),Math.round(l*100)]}
+function hslToHex(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,9-k(n),1));
+  return '#'+[f(0),f(8),f(4)].map(x=>Math.round(x*255).toString(16).padStart(2,'0')).join('')}
+function info(hex){const [r,g,b]=hexToRgb(hex),[h,s,l]=rgbToHsl(r,g,b);
+  return {hex:hex.toUpperCase(),rgb:`rgb(${r}, ${g}, ${b})`,hsl:`hsl(${h}, ${s}%, ${l}%)`,h,s,l,ink:(0.299*r+0.587*g+0.114*b)>150?'#14251b':'#ffffff'}}
+function parseColor(str){const s=str.trim().toLowerCase();if(!s)return null;
+  const m=s.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/);
+  if(m){let h=m[1];if(h.length===3)h=h.split('').map(c=>c+c).join('');return '#'+h}
+  const n=(s.match(/\d+(\.\d+)?/g)||[]).map(Number);if(n.length!==3)return null;
+  if(s.includes('hsl')||s.includes('%')||s.includes('°')){if(n[1]>100||n[2]>100)return null;return hslToHex(n[0]%360,n[1],n[2])}
+  if(n.some(x=>x>255))return null;
+  return '#'+n.map(x=>Math.round(x).toString(16).padStart(2,'0')).join('')}
+const looksGreen=hex=>{const i=info(hex);return i.h>=60&&i.h<=185&&i.s>=5};
+function randomGreen(){const r=(a,b)=>a+Math.random()*(b-a);return hslToHex(r(72,168),r(22,100),r(12,90))}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Saved shades (kept in this browser) ---------- */
+const KEY='greenEncyclopedia.myShades',KEYP='greenEncyclopedia.page';
+const KEYS=KEY+'.subsections';
+let user=[],subs=[];
+try{user=JSON.parse(localStorage.getItem(KEY)||'[]').filter(u=>u&&/^#[0-9a-f]{6}$/.test(u.hex))}catch(e){user=[]}
+try{subs=JSON.parse(localStorage.getItem(KEYS)||'[]').filter(x=>x&&x.id&&typeof x.name==='string')}catch(e){subs=[]}
+let storageOK=true;
+/* Keep shades in page order: those outside any subsection first, then each subsection in turn. */
+function normalize(){const rank=id=>subs.findIndex(x=>x.id===id)+1;
+  user.forEach(u=>{if(u.sub&&!rank(u.sub))delete u.sub});
+  user=user.map((u,i)=>[u,i]).sort((a,b)=>rank(a[0].sub)-rank(b[0].sub)||a[1]-b[1]).map(x=>x[0])}
+function persist(){normalize();try{localStorage.setItem(KEY,JSON.stringify(user));localStorage.setItem(KEYS,JSON.stringify(subs))}catch(e){storageOK=false}}
+/* Exact-match lookup against the predefined shades */
+const PRE={};SECTIONS.forEach(x=>x.colors.forEach(c=>{(PRE[c[1]]=PRE[c[1]]||[]).push([c[0],x.name])}));
+const TOTAL=SECTIONS.reduce((a,x)=>a+x.colors.length,0);
+function dupNote(hex){hex=hex.toLowerCase();const parts=[],m=PRE[hex],mine=user.filter(u=>u.hex===hex);
+  if(m){const by={};m.forEach(([n,sec])=>{(by[n]=by[n]||[]).push(sec)});
+    parts.push('in the encyclopedia as '+Object.keys(by).map(n=>`“${esc(n)}” in the ${by[n].map(esc).join(' and ')} section${by[n].length>1?'s':''}`).join(', and as '))}
+  if(mine.length)parts.push('in My Shades as '+mine.map(u=>{const x=u.sub&&subs.find(y=>y.id===u.sub);return `“${esc(u.name)}” (${x?'in the '+esc(x.name)+' subsection':'no subsection'})`}).join(' and '));
+  return parts.length?'Note: this exact shade is already '+parts.join(', and ')+'. You can still add it.':''}
+
+/* ---------- Pages ---------- */
+let pages=[],secStart=[],discoverAt=0,addAt=0,userStart=0,cur=0,discHex=randomGreen(),openSecs=new Set(),uiPage=[],subStart={},openSubs=new Set(subs.map(x=>x.id));
+function build(){
+  normalize();pages=[{t:'cover'}];secStart=[];
+  SECTIONS.forEach((s,si)=>{secStart[si]=pages.length;pages.push({t:'section',si});
+    s.colors.forEach((c,ci)=>pages.push({t:'color',name:c[0],hex:c[1],sec:s.name,n:ci+1,of:s.colors.length}))});
+  discoverAt=pages.length;pages.push({t:'discover'});
+  addAt=pages.length;pages.push({t:'add'});
+  userStart=pages.length;pages.push({t:'usersec'});uiPage=[];subStart={};
+  const put=(list,label)=>list.forEach((u,k)=>{const ui=user.indexOf(u);uiPage[ui]=pages.length;pages.push({t:'color',name:u.name,hex:u.hex,sec:label,n:k+1,of:list.length,ui,src:u.src})});
+  put(user.filter(u=>!u.sub),'My Shades');
+  subs.forEach(x=>{subStart[x.id]=pages.length;pages.push({t:'usersub',id:x.id});put(user.filter(u=>u.sub===x.id),'My Shades › '+x.name)});
+  document.getElementById('total').textContent=pages.length;
+  document.getElementById('pg').max=pages.length;
+}
+const $=id=>document.getElementById(id);
+function valsTable(hex){const i=info(hex);
+  return `<table class="vals">
+  <tr><td>HEX</td><td><span class="v">${i.hex}</span><button class="copy" data-copy="${i.hex}">Copy</button></td></tr>
+  <tr><td>RGB</td><td><span class="v">${i.rgb}</span><button class="copy" data-copy="${i.rgb}">Copy</button></td></tr>
+  <tr><td>HSL</td><td><span class="v">${i.hsl}</span><button class="copy" data-copy="${i.hsl}">Copy</button></td></tr></table>`}
+function swatch(hex,name){const i=info(hex);
+  return `<div class="swatch" id="sw" style="background:${hex};color:${i.ink}"><div class="big">${esc(name)}</div><div class="sm">${i.hex}</div></div>`}
+function umosaic(list){return list.length?`<div class="mosaic">`+list.map(u=>{const k=user.indexOf(u);return `<button draggable="true" data-ui="${k}" style="background:${u.hex}" title="${esc(u.name)} ${u.hex.toUpperCase()}" data-go="${uiPage[k]}"></button>`}).join('')+`</div>`:''}
+function mosaic(start,list){return `<div class="mosaic">`+list.map((c,k)=>`<button style="background:${c[1]}" title="${esc(c[0])} ${c[1].toUpperCase()}" data-go="${start+1+k}"></button>`).join('')+`</div>`}
+
+function render(){
+  const p=pages[cur],L=$('L'),R=$('R');let l='',r='';
+  const foot=x=>`<div class="pgno"><span>${x||''}</span><span>${cur+1}</span></div>`;
+  if(p.t==='cover'){
+    l=`<div class="cover"><div class="t1">A Field Guide to</div><div class="t2">The Green<br>Encyclopedia</div><div class="t3">${TOTAL.toLocaleString()} named shades in ${SECTIONS.length} families</div><div class="cr">Created by Kenji Santacruz<br><small>Shades sourced from colorguide.org<br>Built with AI assistance</small></div></div>`;
+    r=`<div class="kicker">Contents</div><h2 style="margin-bottom:12px">Sections</h2><ul class="contents">`+
+      SECTIONS.map((s,i)=>`<li><button data-go="${secStart[i]}">${esc(s.name)}<span class="c">${s.colors.length} shades · p. ${secStart[i]+1}</span></button></li>`).join('')+
+      `<li><button data-go="${discoverAt}">✦ Discover a Shade<span class="c">p. ${discoverAt+1}</span></button></li>
+       <li><button data-go="${addAt}">＋ Add Your Own<span class="c">p. ${addAt+1}</span></button></li>
+       <li><button data-go="${userStart}">My Shades<span class="c">${user.length} saved · p. ${userStart+1}</span></button></li></ul>
+       <p style="font-size:13px;color:var(--muted)">Turn pages with the arrows below, the ← → keys, or a swipe.</p>`;
+  }else if(p.t==='section'){
+    const s=SECTIONS[p.si],mid=s.colors[Math.floor(s.colors.length/2)][1],i=info(mid);
+    l=`<div class="sectl" style="background:${mid};color:${i.ink}"><div class="n">Section ${p.si+1} of ${SECTIONS.length}</div><div class="nm">${esc(s.name)}</div><div>${s.colors.length} shades</div></div>`;
+    r=`<div class="kicker">In this section</div><p style="margin:6px 0 14px;color:var(--muted);font-size:14px">Click any tile to jump to that shade.</p>`+mosaic(cur,s.colors)+foot(esc(s.name));
+  }else if(p.t==='color'){
+    l=swatch(p.hex,p.name);
+    r=`<div class="kicker">${esc(p.sec)} · ${p.n} of ${p.of}</div><h2>${esc(p.name)}</h2>`+valsTable(p.hex)+
+      (p.ui!==undefined?`<div class="row" style="margin-top:18px"><button class="btn ghost small" id="ren">✎ Rename</button><button class="btn ghost small" data-mv="-1" ${p.n===1?'disabled':''}>↑ Move earlier</button><button class="btn ghost small" data-mv="1" ${p.n===p.of?'disabled':''}>↓ Move later</button><select class="field" id="subsel" title="Move this shade to a subsection"><option value="">No subsection</option>${subs.map(x=>`<option value="${x.id}" ${user[p.ui].sub===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}<option value="__new">＋ New subsection…</option></select><button class="btn danger" data-del="${p.ui}" style="margin-left:auto">Remove from my shades</button></div><div style="color:var(--muted);font-size:13px;margin-top:10px">${p.src==='random'?'Discovered at random':'Added by you'}</div>`:'')+
+      foot(esc(p.sec));
+  }else if(p.t==='discover'){
+    l=swatch(discHex,'A brand-new green');
+    r=`<div class="kicker">Green Workshop</div><h2>Discover a Shade</h2>
+      <p style="margin-top:-10px">A random green appears every time you open this page. Don't love it? Roll again.</p>
+      <div id="dvals">${valsTable(discHex)}</div>
+      <div class="row" style="margin:18px 0 20px"><button class="btn" id="roll">✦ Show me another</button></div>
+      <label for="dname">Name it (optional)</label>
+      <input class="field" id="dname" maxlength="40" placeholder="Leave blank to use the hex code">${subPicker('dsub')}
+      <div class="row"><button class="btn" id="dsave">Save to My Shades</button></div><div class="msg warn" id="dmsg">${dupNote(discHex)}</div>`+foot('Green Workshop');
+  }else if(p.t==='add'){
+    l=`<div class="swatch" id="sw" style="background:#e9e6d6;color:#6b7568"><div class="big" id="pvname">Preview</div><div class="sm" id="pvhex">Enter a colour →</div></div>`;
+    r=`<div class="kicker">Green Workshop</div><h2>Add Your Own</h2>
+      <label for="acol">Hex, RGB or HSL</label>
+      <input class="field" id="acol" placeholder="#2E8B57   ·   rgb(46, 139, 87)   ·   hsl(146, 50%, 36%)" autocomplete="off">
+      <div id="avals"></div>
+      <label for="aname" style="display:block;margin-top:14px">Name it (optional)</label>
+      <input class="field" id="aname" maxlength="40" placeholder="Leave blank to use the hex code">${subPicker('asub')}
+      <div class="row"><button class="btn" id="asave">Add to My Shades</button></div><div class="msg" id="amsg"></div>`+foot('Green Workshop');
+  }else if(p.t==='usersec'){
+    const ung=user.filter(u=>!u.sub),any=user.length||subs.length;
+    l=`<div class="sectl" style="background:linear-gradient(135deg,#1f6b44,#7fb383)"><div class="n">Your collection</div><div class="nm">My Shades</div><div>${user.length} saved${subs.length?' · '+subs.length+' subsection'+(subs.length===1?'':'s'):''}</div></div>`;
+    r=`<div class="kicker">In this section</div>`+
+      (any?`<p style="margin:6px 0 14px;color:var(--muted);font-size:14px">Click any tile to jump to that shade. Drag tiles here, or the names under My Shades in the Contents panel, to change their order${subs.length?' or move them between subsections':''}. Shift-click or Ctrl-click (⌘-click on a Mac) to select several shades, or a subsection's name to select everything in it. A selection can be removed, dragged or moved together.</p>`+
+        (subs.length?`<div class="glabel" data-dropsub="" data-selsub="" style="margin-top:0"><b>No subsection</b><span>${ung.length} shade${ung.length===1?'':'s'}</span></div>`:'')+umosaic(ung)+
+        subs.map(x=>{const list=user.filter(u=>u.sub===x.id);return `<div class="glabel" data-dropsub="${x.id}" data-selsub="${x.id}"><b>${esc(x.name)}</b><span>${list.length} shade${list.length===1?'':'s'}</span><button class="copy" style="float:none;margin-left:auto" data-go="${subStart[x.id]}">Open</button></div>`+umosaic(list)}).join('')
+        :`<p>Nothing here yet. Save a shade from <b>Discover a Shade</b> or <b>Add Your Own</b> and it will appear in this section.</p>`)+
+      `<div class="row" style="margin-top:22px"><button class="btn ghost" data-go="${discoverAt}">✦ Discover</button><button class="btn ghost" data-go="${addAt}">＋ Add</button><button class="btn ghost" id="newsub">＋ New subsection</button>${ung.length>1?`<select class="field" data-sortsub="" title="Put these shades in order once; you can still drag them afterwards"><option value="">${subs.length?'Sort shades with no subsection…':'Sort…'}</option><option value="light">Lightest to darkest</option><option value="dark">Darkest to lightest</option><option value="hue">By hue</option></select>`:''}
+       <button class="btn ghost" id="exp" ${any?'':'disabled'}>Export backup</button><button class="btn ghost" id="imp">Import backup</button></div>
+       <p style="font-size:13px;color:var(--muted)">Your shades are stored in this browser on this computer${storageOK?'':' (saving is blocked in this browser, so they will be lost when you close the page)'}. Use Export to keep a backup or move them elsewhere.</p>`+foot('My Shades');
+  }else if(p.t==='usersub'){
+    const k=subs.findIndex(x=>x.id===p.id),x=subs[k],list=user.filter(u=>u.sub===x.id);
+    l=`<div class="sectl" style="background:linear-gradient(135deg,#17573a,#5fa37a)"><div class="n">My Shades · Subsection ${k+1} of ${subs.length}</div><div class="nm" style="overflow-wrap:anywhere">${esc(x.name)}</div><div>${list.length} shade${list.length===1?'':'s'}</div></div>`;
+    r=`<div class="kicker">In this subsection</div>`+
+      (list.length?`<p style="margin:6px 0 14px;color:var(--muted);font-size:14px">Click any tile to jump to that shade. Drag tiles to reorder them.</p>`+umosaic(list)
+        :`<p>This subsection is empty. Drag shades onto its name in the Contents panel, or use the subsection menu on any shade's page in My Shades.</p>`)+
+      `<div class="row" style="margin-top:22px"><button class="btn ghost small" id="sren">✎ Rename</button>${list.length?`<button class="btn ghost small" id="sselall" title="Select every shade in this subsection; click again to deselect">☑ Select all</button>`:''}<button class="btn ghost small" data-smv="-1" ${k===0?'disabled':''}>↑ Move up</button><button class="btn ghost small" data-smv="1" ${k===subs.length-1?'disabled':''}>↓ Move down</button>${list.length>1?`<select class="field" data-sortsub="${x.id}" title="Put these shades in order once; you can still drag them afterwards"><option value="">Sort…</option><option value="light">Lightest to darkest</option><option value="dark">Darkest to lightest</option><option value="hue">By hue</option></select>`:''}<button class="btn danger" id="sdel" style="margin-left:auto" title="Removes the subsection only; its shades stay in My Shades">Delete subsection</button>${list.length?`<button class="btn danger" id="sdelall" title="Removes the subsection and every shade inside it">Delete subsection and its shades</button>`:''}</div>`+foot('My Shades');
+  }
+  L.innerHTML=l;R.innerHTML=r;R.scrollTop=0;$('book').classList.toggle('is-cover',p.t==='cover');
+  $('pg').value=cur+1;$('prev').disabled=cur===0;$('next').disabled=cur===pages.length-1;
+  try{localStorage.setItem(KEYP,cur)}catch(e){}
+  markToc();
+}
+function go(n,noAnim){n=Math.max(0,Math.min(pages.length-1,n|0));const d=n-cur;
+  if(n===discoverAt&&d!==0)discHex=randomGreen();
+  cur=n;render();
+  if(d&&!noAnim){const b=$('book');b.classList.remove('flip-f','flip-b');void b.offsetWidth;b.classList.add(d>0?'flip-f':'flip-b')}
+  if(innerWidth<=820&&d)$('toc').classList.add('closed');
+}
+
+/* ---------- Table of contents ---------- */
+function secOf(n){if(n>=userStart)return 'u';if(n>=discoverAt)return 'w';for(let i=SECTIONS.length-1;i>=0;i--)if(n>=secStart[i])return i;return -1}
+function item(c,pageNo){return `<button class="titem" data-go="${pageNo}" data-p="${pageNo}"><span class="dot" style="background:${c[1]}"></span>${esc(c[0])}<span class="hx">${c[1].toUpperCase()}</span></button>`}
+function renderToc(){
+  const q=$('search').value.trim().toLowerCase(),box=$('toclist');
+  if(q){const out=[];
+    pages.forEach((p,i)=>{if(p.t==='color'&&out.length<300&&(p.name.toLowerCase().includes(q)||p.hex.includes(q.replace('#',''))))out.push(`<button class="titem" style="padding-left:14px" data-go="${i}" data-p="${i}"><span class="dot" style="background:${p.hex}"></span><span>${esc(p.name)}<br><small style="color:var(--muted)">${esc(p.sec)}</small></span><span class="hx">${p.hex.toUpperCase()}</span></button>`)});
+    box.innerHTML=out.length?out.join('')+(out.length===300?'<div class="tnote">Showing the first 300 matches.</div>':''):'<div class="tnote">No shades match.</div>';return}
+  let h=`<div class="trow" data-sec="-1"><span class="caret"></span><button class="tname" data-go="0">Cover &amp; Contents</button></div><div class="tdiv"></div>`;
+  SECTIONS.forEach((s,i)=>{const o=openSecs.has(i);
+    h+=`<div class="trow" data-sec="${i}"><button class="caret" data-tog="${i}" title="Show shades">${o?'▼':'▶'}</button><button class="tname" data-go="${secStart[i]}">${esc(s.name)}</button><span class="cnt">${s.colors.length}</span></div>
+        <div class="tsub ${o?'open':''}">${o?s.colors.map((c,k)=>item(c,secStart[i]+1+k)).join(''):''}</div>`});
+  h+=`<div class="tdiv"></div><div class="trow" data-sec="w"><span class="caret"></span><button class="tname" data-go="${discoverAt}">Green Workshop</button></div>
+      <div class="tsub open"><button class="titem" data-go="${discoverAt}" data-p="${discoverAt}">✦ Discover a Shade</button><button class="titem" data-go="${addAt}" data-p="${addAt}">＋ Add Your Own</button></div>
+      <div class="tdiv"></div>`+userToc();
+  box.innerHTML=h;markToc();
+}
+function userToc(){
+  const uitem=(u,deep)=>{const k=user.indexOf(u);return item([u.name,u.hex],uiPage[k]).replace('<button class="titem"','<button class="titem'+(deep?' deep':'')+'" draggable="true" data-ui="'+k+'" title="Drag to reorder'+(subs.length?' or move between subsections':'')+'"')};
+  return `<div class="trow" data-sec="u" data-dropsub=""><span class="caret"></span><button class="tname" data-go="${userStart}" data-selsub="" title="Shift-click or Ctrl-click to select the shades with no subsection">My Shades</button><span class="cnt">${user.length}</span></div><div class="tsub open">`+
+    (user.length||subs.length?'':'<div class="tnote">No saved shades yet.</div>')+user.filter(u=>!u.sub).map(u=>uitem(u)).join('')+
+    subs.map(x=>{const list=user.filter(u=>u.sub===x.id),o=openSubs.has(x.id);
+      return `<div class="trow subrow" draggable="true" data-subrow="${x.id}" data-dropsub="${x.id}" title="Drag to reorder subsections"><button class="caret" data-togsub="${x.id}" title="Show shades">${o?'▼':'▶'}</button><button class="tname" data-go="${subStart[x.id]}" data-selsub="${x.id}" title="Shift-click or Ctrl-click to select every shade in this subsection">${esc(x.name)}</button><span class="cnt">${list.length}</span></div>
+        <div class="tsub ${o?'open':''}" data-subbody="${x.id}">${o?(list.length?list.map(u=>uitem(u,1)).join(''):`<div class="tnote" data-dropsub="${x.id}" style="padding-left:48px">Empty. Drag shades here.</div>`):''}</div>`}).join('')+`</div>`}
+function markToc(){const s=String(secOf(cur));
+  document.querySelectorAll('#toclist .trow').forEach(e=>e.classList.toggle('cur',e.dataset.sec===s));
+  document.querySelectorAll('#toclist .titem').forEach(e=>e.classList.toggle('cur',e.dataset.p===String(cur)));
+  const c=document.querySelector('#toclist .titem.cur');if(c)c.scrollIntoView({block:'nearest'});markSel()}
+
+/* ---------- Selecting several of My Shades ---------- */
+const sel=new Set();let selAnchor=null,pickSub='';
+function markSel(){[...sel].forEach(u=>{if(!user.includes(u))sel.delete(u)});
+  document.querySelectorAll('[data-ui]').forEach(e=>e.classList.toggle('sel',sel.has(user[+e.dataset.ui])));
+  $('selbar').hidden=sel.size===0;$('selcount').textContent=sel.size+' shade'+(sel.size===1?'':'s')+' selected';
+  $('selmove').innerHTML='<option value="">Move to…</option><option value="__none">No subsection</option>'+subs.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')+'<option value="__new">＋ New subsection…</option>';
+  const b=document.querySelector('#R [data-del]');if(b)b.textContent=sel.size>=2?'Remove '+sel.size+' selected shades':'Remove from my shades'}
+function pick(u,range){const viewed=pages[cur].ui!==undefined?user[pages[cur].ui]:null;
+  if(range){const a=selAnchor&&user.includes(selAnchor)?selAnchor:viewed;
+    if(a&&(a.sub||'')===(u.sub||'')){const i=user.indexOf(a),j=user.indexOf(u);for(let k=Math.min(i,j);k<=Math.max(i,j);k++)sel.add(user[k])}
+    else{sel.add(u);selAnchor=u}}
+  else{if(!sel.size&&selAnchor&&selAnchor===viewed&&selAnchor!==u)sel.add(selAnchor);
+    sel.has(u)?sel.delete(u):sel.add(u);selAnchor=u}
+  markSel()}
+function selectGroup(id){const list=user.filter(u=>(u.sub||'')===id);if(!list.length)return;
+  if(list.every(u=>sel.has(u)))list.forEach(u=>sel.delete(u));else list.forEach(u=>sel.add(u));selAnchor=null;markSel()}
+function removeSelected(){const list=user.filter(u=>sel.has(u));if(!list.length)return;
+  const names=list.slice(0,12).map(u=>'• '+u.name).join('\n')+(list.length>12?'\n…and '+(list.length-12)+' more':'');
+  ask('You are about to remove '+list.length+' shade'+(list.length===1?'':'s')+' from My Shades:\n\n'+names+'\n\nClick OK to remove '+(list.length===1?'it':'them')+'.').then(ok=>{if(!ok)return;
+    const a=anchor(),rem=user.map((u,i)=>[u,i]).filter(x=>list.includes(x[0]));user=user.filter(u=>!list.includes(u));sel.clear();selAnchor=null;commit(a);offerUndo(rem)})}
+/* On touch devices, backups use an in-page panel: many phone browsers and viewer apps cannot download a file from a page. */
+const TOUCH=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
+function openBackup(mode,json){const ex=mode==='export';let canShare=false;
+  try{canShare=ex&&!!navigator.share&&!!navigator.canShare&&navigator.canShare({files:[new File(['{}'],'my-green-shades.json',{type:'text/plain'})]})}catch(x){}
+  $('bkmsg').innerHTML=ex?'<b>Your backup</b><br>'+(canShare?'Save it as a file, or copy':'Copy')+' the text below and keep it somewhere safe, such as a note or an email to yourself.'
+    :'<b>Import a backup</b><br>Choose a backup file, or paste backup text into the box.';
+  $('bktext').value=ex?json:'';$('bktext').readOnly=ex;$('bktext').placeholder=ex?'':'Paste backup text here';
+  $('bkshare').hidden=!canShare;$('bkcopy').hidden=!ex;$('bkfile').hidden=ex;$('bkimport').hidden=ex;say('bknote','');$('bk').hidden=false}
+/* In-page prompts (some phone viewers ignore the browser's built-in confirm and alert boxes) */
+let dlgDone=null;
+function closeDlg(v){const f=dlgDone;dlgDone=null;$('dlg').hidden=true;if(f)f(v)}
+function ask(msg,okLabel,cancelLabel){return new Promise(res=>{if(dlgDone)closeDlg(false);$('dlgmsg').textContent=msg;$('dlgok').textContent=okLabel||'OK';
+  $('dlgcancel').textContent=cancelLabel||'Cancel';$('dlgcancel').hidden=cancelLabel===null;dlgDone=res;$('dlg').hidden=false;$('dlgok').focus()})}
+const notify=msg=>ask(msg,'OK',null);
+/* Short-lived undo for removals */
+let undoFn=null,undoTimer=null;
+function hideUndo(){undoFn=null;clearTimeout(undoTimer);$('toast').hidden=true}
+function showUndo(msg,fn){undoFn=fn;$('toast').innerHTML=`<span>${msg}</span><button class="btn small" id="undo">Undo</button>`;$('toast').hidden=false;clearTimeout(undoTimer);undoTimer=setTimeout(hideUndo,12000)}
+function offerUndo(rem){const n=rem.length;showUndo(`Removed ${n===1?'“'+esc(rem[0][0].name)+'”':n+' shades'} from My Shades.`,()=>rem.forEach(([u,i])=>{if(!user.includes(u))user.splice(Math.min(i,user.length),0,u)}))}
+function doUndo(){if(!undoFn)return;const a=anchor(),fn=undoFn;hideUndo();commit(fn()||a)}
+function sortGroup(id,mode){const list=user.filter(u=>(u.sub||'')===id);if(list.length<2)return;const prev=user.slice(),a=anchor();
+  const key=u=>{const i=info(u.hex);return mode==='hue'?[i.h,-i.l,i.s]:[mode==='dark'?i.l:-i.l,i.h,i.s]};
+  const sorted=list.map(u=>[u,key(u)]).sort((x,y)=>x[1][0]-y[1][0]||x[1][1]-y[1][1]||x[1][2]-y[1][2]).map(x=>x[0]);
+  user=user.filter(u=>!list.includes(u)).concat(sorted);commit(a);
+  showUndo('Sorted '+list.length+' shades.',()=>{user=prev.filter(u=>user.includes(u)).concat(user.filter(u=>!prev.includes(u)))})}
+function subPicker(id){if(pickSub&&!subs.some(x=>x.id===pickSub))pickSub='';
+  return subs.length?`<label for="${id}">Subsection (optional)</label><select class="field" id="${id}" style="display:block;width:100%;margin:6px 0 14px;font-size:16px;padding:10px 12px"><option value="">No subsection</option>${subs.map(x=>`<option value="${x.id}" ${pickSub===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`:''}
+const whereOf=u=>'My Shades'+(u.sub?' › '+esc(subs.find(x=>x.id===u.sub).name):'');
+
+/* ---------- Saving ---------- */
+function addShade(hex,name,src){name=(name||'').trim()||hex.toUpperCase();const u={name,hex:hex.toLowerCase(),src};if(pickSub&&subs.some(x=>x.id===pickSub))u.sub=pickSub;user.push(u);persist();build();renderToc();return u}
+/* Remember what is on screen so the same shade or subsection stays open after things move. */
+function anchor(){const p=pages[cur];return p.ui!==undefined?{u:user[p.ui]}:p.t==='usersub'?{s:p.id}:{n:cur}}
+function commit(a){persist();build();renderToc();
+  cur=a.u&&user.includes(a.u)?uiPage[user.indexOf(a.u)]:a.s&&subStart[a.s]!==undefined?subStart[a.s]:Math.min(a.n===undefined?userStart:a.n,pages.length-1);render()}
+function placeMany(list,subId,r,after){list=user.filter(u=>list.includes(u));if(!list.length||(r&&list.includes(r)))return;const a=anchor();
+  list.forEach(u=>{if(subId)u.sub=subId;else delete u.sub});user=user.filter(u=>!list.includes(u));
+  if(r)user.splice(user.indexOf(r)+(after?1:0),0,...list);else user.push(...list);commit(a)}
+function placeShade(from,subId,ref,after){const u=user[from];if(u)placeMany([u],subId,ref==null?null:user[ref],after)}
+function uniqueSubName(base){let n=base,i=2;while(subs.some(x=>x.name===n))n=base+' '+i++;return n}
+function newSub(name){const x={id:'s'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:uniqueSubName(name||'New subsection')};subs.push(x);openSubs.add(x.id);return x}
+function reorderSub(id,refId,after){if(id===refId)return;const a=anchor(),x=subs.splice(subs.findIndex(y=>y.id===id),1)[0];
+  subs.splice(subs.findIndex(y=>y.id===refId)+(after?1:0),0,x);commit(a)}
+function startSubRename(){const p=pages[cur];if(p.t!=='usersub'||$('srname'))return;const x=subs.find(y=>y.id===p.id);
+  $('R').insertAdjacentHTML('afterbegin',`<div style="margin:0 0 18px"><label for="srname">Subsection name</label><input class="field" id="srname" maxlength="40" style="font-size:20px;margin-bottom:8px"><div class="row"><button class="btn small" id="ssave">Save name</button><button class="btn ghost small" id="scancel">Cancel</button></div></div>`);
+  const i=$('srname');i.value=x.name;i.focus();i.select()}
+function saveSubRename(){const p=pages[cur];if(p.t!=='usersub'||!$('srname'))return;subs.find(y=>y.id===p.id).name=$('srname').value.trim()||'Untitled subsection';commit(anchor())}
+function startRename(){const ui=pages[cur].ui;if(ui===undefined)return;const h=$('R').querySelector('h2');
+  h.outerHTML=`<div style="margin:8px 0 18px"><input class="field" id="rname" maxlength="40" placeholder="Leave blank to use the hex code" style="font-size:22px;margin-bottom:8px"><div class="row"><button class="btn small" id="rsave">Save name</button><button class="btn ghost small" id="rcancel">Cancel</button></div></div>`;
+  const i=$('rname');i.value=user[ui].name===user[ui].hex.toUpperCase()?'':user[ui].name;i.focus();i.select()}
+function saveRename(){const ui=pages[cur].ui;if(ui===undefined||!$('rname'))return;user[ui].name=$('rname').value.trim()||user[ui].hex.toUpperCase();persist();build();renderToc();render()}
+function say(id,text,cls){const m=$(id);if(m){m.className='msg '+(cls||'');m.innerHTML=text}}
+function updateAddPreview(){const hex=parseColor($('acol').value),sw=$('sw');
+  if(!hex){sw.style.background='#e9e6d6';sw.style.color='#6b7568';$('pvname').textContent='Preview';$('pvhex').textContent=$('acol').value.trim()?'Not a colour I can read yet':'Enter a colour →';$('avals').innerHTML='';say('amsg','');return null}
+  const i=info(hex);sw.style.background=hex;sw.style.color=i.ink;$('pvname').textContent=$('aname').value.trim()||i.hex;$('pvhex').textContent=i.hex;$('avals').innerHTML=valsTable(hex);
+  say('amsg',[looksGreen(hex)?'':'Heads up: this doesn\'t look very green. You can still add it.',dupNote(hex)].filter(Boolean).join('<br>'),'warn');return hex}
+function copyText(t,btn){const done=()=>{const o=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=o,900)};
+  const fb=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');done()}catch(e){}a.remove()};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(done,fb);else fb()}
+
+/* ---------- Events ---------- */
+$('dlgok').onclick=()=>closeDlg(true);$('dlgcancel').onclick=()=>closeDlg(false);
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-selsub]');if(g&&(e.shiftKey||e.ctrlKey||e.metaKey)){e.preventDefault();return selectGroup(g.dataset.selsub)}
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.ui!==undefined){const u=user[+t.dataset.ui];
+    if(e.shiftKey||e.ctrlKey||e.metaKey){e.preventDefault();return pick(u,e.shiftKey)}
+    sel.clear();selAnchor=u}
+  if(t.dataset.go!==undefined)return go(+t.dataset.go);
+  if(t.dataset.goto)return go(t.dataset.goto==='discover'?discoverAt:addAt);
+  if(t.dataset.tog!==undefined){const i=+t.dataset.tog;openSecs.has(i)?openSecs.delete(i):openSecs.add(i);return renderToc()}
+  if(t.dataset.copy)return copyText(t.dataset.copy,t);
+  if(t.dataset.mv!==undefined){const ui=pages[cur].ui,d=+t.dataset.mv;if(ui!==undefined&&user[ui+d])placeShade(ui,user[ui].sub||'',ui+d,d>0);return}
+  if(t.dataset.togsub!==undefined){const i=t.dataset.togsub;openSubs.has(i)?openSubs.delete(i):openSubs.add(i);return renderToc()}
+  if(t.dataset.smv!==undefined){const p=pages[cur],k=subs.findIndex(x=>x.id===p.id),o=subs[k+ +t.dataset.smv];if(o)reorderSub(p.id,o.id,+t.dataset.smv>0);return}
+  if(t.dataset.del!==undefined){if(sel.size>=2)return removeSelected();const u=user[+t.dataset.del];return void ask('Remove "'+u.name+'" from My Shades?').then(ok=>{const i=user.indexOf(u);if(!ok||i<0)return;const rem=[[u,i]];user.splice(i,1);persist();build();renderToc();go(Math.min(cur,pages.length-1),true);offerUndo(rem)})}
+  switch(t.id){
+    case 'ren':startRename();break;
+    case 'rsave':saveRename();break;
+    case 'rcancel':render();break;
+    case 'undo':doUndo();break;
+    case 'selrm':removeSelected();break;
+    case 'selclr':sel.clear();markSel();break;
+    case 'tocclose':$('toc').classList.add('closed');break;
+    case 'tocbtn':$('toc').classList.toggle('closed');break;
+    case 'prev':go(cur-1);break;
+    case 'next':go(cur+1);break;
+    case 'roll':discHex=randomGreen();{const nm=$('dname').value;render();$('dname').value=nm}break;
+    case 'dsave':{const u=addShade(discHex,$('dname').value,'random'),at=uiPage[user.indexOf(u)];render();
+      say('dmsg',`Saved “${esc(u.name)}” to ${whereOf(u)}. <button class="copy" style="float:none" data-go="${at}">View page ${at+1}</button>`);break}
+    case 'asave':{const hex=updateAddPreview();if(!hex)return say('amsg','Enter a colour as hex, RGB or HSL first.','err');
+      const u=addShade(hex,$('aname').value,'manual'),at=uiPage[user.indexOf(u)];$('acol').value='';$('aname').value='';updateAddPreview();render();
+      say('amsg',`Added “${esc(u.name)}” to ${whereOf(u)}. <button class="copy" style="float:none" data-go="${at}">View page ${at+1}</button>`);break}
+    case 'exp':{const data={app:'green-encyclopedia',version:2,subsections:subs.map(x=>({id:x.id,name:x.name})),shades:user.map(u=>({name:u.name,hex:u.hex,src:u.src,sub:u.sub||null}))};
+      const json=JSON.stringify(data,null,1);if(TOUCH){openBackup('export',json);break}
+      const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download='my-green-shades.json';a.click();break}
+    case 'newsub':{const x=newSub();persist();build();renderToc();go(subStart[x.id]);startSubRename();break}
+    case 'sren':startSubRename();break;
+    case 'sselall':selectGroup(pages[cur].id);break;
+    case 'ssave':saveSubRename();break;
+    case 'scancel':render();break;
+    case 'sdel':case 'sdelall':{const p=pages[cur],x=subs.find(y=>y.id===p.id),members=user.filter(u=>u.sub===x.id),n=members.length,all=t.id==='sdelall',idx=subs.indexOf(x),order=user.slice();
+      ask(all?'Delete the subsection "'+x.name+'" AND the '+n+' shade'+(n===1?'':'s')+' inside it?\n\nThe shades will be removed from My Shades. Click OK to delete everything in this subsection.'
+        :'Delete the subsection "'+x.name+'"?'+(n?'\n\nIts '+n+' shade'+(n===1?'':'s')+' will not be deleted. They stay in My Shades with no subsection.':'')).then(ok=>{if(!ok||!subs.includes(x))return;
+      if(all)user=user.filter(u=>u.sub!==x.id);
+      else{members.forEach(u=>delete u.sub);user=user.filter(u=>!members.includes(u));user=user.filter(u=>!u.sub).concat(members,user.filter(u=>u.sub))}
+      members.forEach(u=>sel.delete(u));subs=subs.filter(y=>y!==x);openSubs.delete(x.id);persist();build();renderToc();go(userStart,true);
+      showUndo(all&&n?`Deleted “${esc(x.name)}” and its ${n} shade${n===1?'':'s'}.`:`Deleted the subsection “${esc(x.name)}”.`,()=>{
+        if(!subs.includes(x))subs.splice(Math.min(idx,subs.length),0,x);openSubs.add(x.id);
+        members.forEach(u=>{if(!all&&!user.includes(u))return;if(!user.includes(u))user.push(u);u.sub=x.id});
+        user=order.filter(u=>user.includes(u)).concat(user.filter(u=>!order.includes(u)));return {s:x.id}})});break}
+    case 'imp':if(TOUCH)openBackup('import');else $('importfile').click();break;
+    case 'bkclose':$('bk').hidden=true;break;
+    case 'bkfile':$('importfile').click();break;
+    case 'bkcopy':copyText($('bktext').value,t);break;
+    case 'bkimport':if($('bktext').value.trim()){$('bk').hidden=true;importText($('bktext').value)}else say('bknote','Paste the backup text into the box first.','err');break;
+    case 'bkshare':{const mk=type=>new File([$('bktext').value],'my-green-shades.json',{type});let f=mk('application/json');
+      try{if(!navigator.canShare({files:[f]}))f=mk('text/plain')}catch(x){}
+      navigator.share({files:[f]}).catch(err=>{if(err&&err.name!=='AbortError')say('bknote','Sharing is not available in this app. Use Copy text instead.','warn')});break}
+  }
+});
+$('importfile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>importText(rd.result);rd.readAsText(f);e.target.value='';$('bk').hidden=true});
+function importText(txt){try{const data=JSON.parse(txt),arr=Array.isArray(data)?data:data.shades,isubs=Array.isArray(data)?[]:(data.subsections||[]);
+    if(!Array.isArray(arr)||!Array.isArray(isubs))throw 0;let n=0;
+    const finish=replace=>{if(replace){user=[];subs=[];openSubs.clear()}
+    const map={};isubs.forEach(x=>{if(!x||x.id==null)return;const nm=String(x.name||'Untitled subsection').slice(0,40);let mine=subs.find(y=>y.name===nm);if(!mine){mine=newSub(nm)}map[x.id]=mine.id});
+    arr.forEach(u=>{const hex=u&&parseColor(String(u.hex||''));if(!hex)return;const name=String(u.name||hex.toUpperCase()).slice(0,40),sub=map[u.sub];
+      if(user.some(x=>x.hex===hex&&x.name===name&&(x.sub||undefined)===sub))return;const o={name,hex,src:u.src==='random'?'random':'manual'};if(sub)o.sub=sub;user.push(o);n++});
+    persist();build();renderToc();go(userStart,true);notify('Imported '+n+' shade'+(n===1?'':'s')+(isubs.length?' and '+isubs.length+' subsection'+(isubs.length===1?'':'s'):'')+'.')};
+    if(user.length||subs.length)ask('Replace your current My Shades with the ones in this file?\n\nReplace = My Shades becomes exactly what is in the file (its shades, names, order and subsections).\n\nAdd to mine = keep what you have and add the file\'s shades to it.','Replace','Add to mine').then(finish);else finish(false)}catch(err){notify('That could not be read as a shades backup.')}}
+document.addEventListener('change',e=>{
+  if(e.target.dataset.sortsub!==undefined){if(e.target.value)sortGroup(e.target.dataset.sortsub,e.target.value);return}
+  if(e.target.id==='selmove'){const v=e.target.value,list=[...sel];e.target.value='';if(!v||!list.length)return;
+    if(v==='__new'){const x=newSub();placeMany(list,x.id,null);go(subStart[x.id]);startSubRename()}else placeMany(list,v==='__none'?'':v,null);return}
+  if(e.target.id==='asub'||e.target.id==='dsub'){pickSub=e.target.value;return}if(e.target.id!=='subsel')return;const ui=pages[cur].ui,v=e.target.value;if(ui===undefined)return;
+  if(v==='__new'){const x=newSub();user[ui].sub=x.id;persist();build();renderToc();go(subStart[x.id]);startSubRename()}
+  else placeShade(ui,v,null)});
+document.addEventListener('input',e=>{
+  if(e.target.id==='acol'||e.target.id==='aname')updateAddPreview();
+  if(e.target.id==='search')renderToc()});
+$('pg').addEventListener('change',e=>go(+e.target.value-1));
+document.addEventListener('keydown',e=>{
+  if(dlgDone){if(e.key==='Escape'){e.preventDefault();closeDlg(false)}else if(e.key==='Enter'){e.preventDefault();closeDlg(document.activeElement!==$('dlgcancel'))}return}
+  if(!$('bk').hidden&&e.key==='Escape'){$('bk').hidden=true;return}
+  const inField=/INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+  if(e.key==='Enter'&&e.target.id==='acol'){$('asave').click();return}
+  if(e.key==='Enter'&&e.target.id==='aname'){$('asave').click();return}
+  if(e.key==='Enter'&&e.target.id==='dname'){$('dsave').click();return}
+  if(e.target.id==='srname'){if(e.key==='Enter')saveSubRename();else if(e.key==='Escape')render();return}
+  if(e.target.id==='rname'){if(e.key==='Enter')saveRename();else if(e.key==='Escape')render();return}
+  if(inField)return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  else if(e.key==='Escape'){sel.clear();markSel()}
+  else if(e.key==='Delete'&&sel.size){e.preventDefault();removeSelected()}
+  else if(e.key==='Home')go(0);else if(e.key==='End')go(pages.length-1)});
+let tx=null;const bk=$('book');
+bk.addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});
+bk.addEventListener('touchend',e=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>60)go(cur+(dx<0?1:-1))});
+
+/* ---------- Drag to reorder My Shades and its subsections ---------- */
+let drag=null;
+const clearDrop=()=>document.querySelectorAll('.dropa,.dropb,.dropin,.dragging').forEach(e=>e.classList.remove('dropa','dropb','dropin','dragging'));
+function dropInfo(e){if(!drag||!e.target.closest)return null;
+  const half=t=>{const r=t.getBoundingClientRect();return t.closest('.mosaic')?e.clientX>r.left+r.width/2:e.clientY>r.top+r.height/2};
+  if(drag.ui!==undefined){let t=e.target.closest('[data-ui]');if(t)return {t,kind:'shade',after:half(t)};
+    t=e.target.closest('[data-dropsub]');return t?{t,kind:'into'}:null}
+  let t=e.target.closest('[data-subrow]');if(t)return {t,kind:'sub',after:half(t)};
+  /* over the shades listed inside a subsection: drop the dragged subsection just after it */
+  t=e.target.closest('[data-subbody]');if(t)return {t,kind:'subafter'};
+  /* in the empty space below the last subsection: make it the last one */
+  const all=document.querySelectorAll('#toclist [data-subbody]'),last=all[all.length-1];
+  if(last&&e.target.closest('#toclist')){const rows=document.querySelectorAll('#toclist [data-subrow]'),b=Math.max(last.getBoundingClientRect().bottom,rows[rows.length-1].getBoundingClientRect().bottom);
+    if(e.clientY>=b-1)return {t:last,kind:'subafter'}}
+  return null}
+document.addEventListener('dragstart',e=>{if(!e.target.closest)return;let t=e.target.closest('[data-ui]'),label;
+  if(t){drag={ui:+t.dataset.ui};const u=user[drag.ui];drag.list=sel.size>1&&sel.has(u)?[...sel]:[u];label=drag.list.length>1?drag.list.length+' shades':u.name;
+    if(drag.list.length>1)document.querySelectorAll('[data-ui].sel').forEach(x=>x.classList.add('dragging'))}else{t=e.target.closest('[data-subrow]');if(!t)return;drag={sub:t.dataset.subrow};label='subsection'}
+  t.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',label)}catch(x){}});
+document.addEventListener('dragover',e=>{const d=dropInfo(e);if(!d)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.dropa,.dropb,.dropin').forEach(x=>x.classList.remove('dropa','dropb','dropin'));d.t.classList.add(d.kind==='into'?'dropin':d.kind==='subafter'||d.after?'dropa':'dropb')});
+document.addEventListener('drop',e=>{const d=dropInfo(e);if(!d)return;e.preventDefault();const g=drag;drag=null;clearDrop();
+  if(d.kind==='shade'){const r=user[+d.t.dataset.ui];placeMany(g.list,r.sub||'',r,d.after)}
+  else if(d.kind==='into')placeMany(g.list,d.t.dataset.dropsub,null);
+  else if(d.kind==='subafter')reorderSub(g.sub,d.t.dataset.subbody,true);
+  else reorderSub(g.sub,d.t.dataset.subrow,d.after)});
+document.addEventListener('dragend',()=>{drag=null;clearDrop()});
+
+/* ---------- Start ---------- */
+build();
+if(innerWidth<=820)$('toc').classList.add('closed');
+renderToc();
+let startAt=0;try{startAt=+localStorage.getItem(KEYP)||0}catch(e){}
+go(startAt<pages.length?startAt:0,true);
+</script>
+</body>
+</html>
