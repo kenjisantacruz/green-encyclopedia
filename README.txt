@@ -3,7 +3,7 @@ THE GREEN ENCYCLOPEDIA
 Created by Kenji Santacruz
 Shades sourced from colorguide.org. Built with AI assistance.
 
-A book-style encyclopedia of 1,410 named shades of green in 13 sections,
+A book-style encyclopedia of 1,391 named shades of green in 13 sections,
 plus tools to discover new greens and keep your own collection.
 
 
